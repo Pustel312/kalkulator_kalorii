@@ -1,4 +1,4 @@
-from math_core import calculate_bmr, calculate_tdee, calculate_macronutrients, adjust_calories_for_goal
+from math_core import food_menu, add_new_product, calculate_bmr, calculate_tdee, calculate_macronutrients, adjust_calories_for_goal
 
 def main():
 #PODSTAWOWE DANE UZYTKOWNIKA
@@ -35,11 +35,7 @@ def main():
     print(f"Twoje docelowe kalorie wynoszą {goal}, co przekłada się na: {protein}g białka, {fat}g tłuszczów i {carbs}g węglowodanów.")
 
 
-
-
-
-
-
-
 if __name__ == "__main__":
     main()
+
+food_menu()
