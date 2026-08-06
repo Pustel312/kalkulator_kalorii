@@ -1,0 +1,16 @@
+[
+    {
+        "nazwa": "makaron z kurczakiem",
+        "bialko": 20.0,
+        "tluszcze": 3.0,
+        "weglowodany": 40.0,
+        "kalorie": 267.0
+    },
+    {
+        "nazwa": "chilli con carne",
+        "bialko": 15.0,
+        "tluszcze": 5.0,
+        "weglowodany": 50.0,
+        "kalorie": 305.0
+    }
+]
