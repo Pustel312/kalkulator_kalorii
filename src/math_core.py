@@ -1,4 +1,5 @@
 import json
+from datetime import date
 def load_products():
     try:
         with open("baza.json", "r", encoding="utf-8") as f:
@@ -53,29 +54,37 @@ def food_menu():
             if not baza_produktow:
                 print("Baza jest pusta!")
             else:
-                print("\n--- DOSTĘPNE PRODUKTY ---")
-                for idx, produkt in enumerate(baza_produktow):
-                    print(f"{idx}. {produkt['nazwa']}")
-                product_idx = int(input("Który produkt chcesz dodać? "))
-                if product_idx in range(0, len(baza_produktow)):
-                    product_choice = baza_produktow[product_idx]
-                    weight_choice = int(input("Jaka jest waga produktu? "))
-                    porcja = calculate_portion(produkt=product_choice, weight=weight_choice)
-                    print(f"Twój dodany log to: {porcja['nazwa']}, która posiada: B: {porcja['bialko']}, T: {porcja['tluszcze']}, W: {porcja['weglowodany']}, ktore sie skladaja na {porcja['kalorie']} kalorii.")
-                    dziennik_posilkow.append(porcja)
-                    save_note(dziennik_posilkow)
+                szukana_fraza = input("Wpisz wyszukiwana fraze ")
+                znalezione = search_products(baza_produktow, szukana_fraza)
+                if not znalezione:
+                    print("Nie znaleziono żadnego produktu spełniającego kryteria")
+                else:
+                    for idx, produkt in enumerate(znalezione):   
+                        print(f"{idx}. {produkt['nazwa']}")                 
+                    product_idx = int(input("Wybierz produkt, który chcesz dodać "))
+                    if product_idx in range(0, len(znalezione)):
+                        product_choice = znalezione[product_idx]
+                        weight_choice = int(input("Jaka jest waga produktu? "))
+                        porcja = calculate_portion(produkt=product_choice, weight=weight_choice)
+                        porcja["data"] = str(date.today())
+                        print(f"Twój dodany log to: {porcja['nazwa']}, która posiada: B: {porcja['bialko']}, T: {porcja['tluszcze']}, W: {porcja['weglowodany']}, ktore sie skladaja na {porcja['kalorie']} kalorii.")
+                        dziennik_posilkow.append(porcja)
+                        save_note(dziennik_posilkow)
                     
         elif choice == 3:
             suma_kalorii = 0
             suma_bialko = 0
             suma_tluszcze = 0
             suma_weglowodany = 0
+            dzisiaj = str(date.today())
             for posilek in dziennik_posilkow:
-                suma_kalorii += posilek['kalorie']
-                suma_bialko += posilek['bialko']
-                suma_tluszcze += posilek['tluszcze']
-                suma_weglowodany += posilek['weglowodany']
+                if posilek["data"] == dzisiaj:
+                    suma_kalorii += posilek['kalorie']
+                    suma_bialko += posilek['bialko']
+                    suma_tluszcze += posilek['tluszcze']
+                    suma_weglowodany += posilek['weglowodany']
             print(f"Łączna liczba kalorii to: {suma_kalorii}, BTW to: {suma_bialko}, {suma_tluszcze}, {suma_weglowodany}.")
+
         elif choice == 0:
             is_running = False
 
@@ -129,3 +138,10 @@ def calculate_portion(produkt: dict, weight: float)->dict:
             "kalorie": produkt["kalorie"]*conversion_factor
         }
     return porcja
+
+def search_products(baza_produktow: list[dict], fraza: str) -> list[dict]:
+    wyniki = []
+    for produkt in baza_produktow:
+        if fraza.lower() in produkt["nazwa"].lower():
+            wyniki.append(produkt)
+    return wyniki

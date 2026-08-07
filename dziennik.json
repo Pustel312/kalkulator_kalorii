@@ -1,0 +1,20 @@
+[
+    {
+        "nazwa": "makaron z szpikaniem",
+        "waga": 400,
+        "bialko": 80.0,
+        "tluszcze": 20.0,
+        "weglowodany": 180.0,
+        "kalorie": 1220.0,
+        "data": "2026-08-07"
+    },
+    {
+        "nazwa": "chilli con carne",
+        "waga": 500,
+        "bialko": 75.0,
+        "tluszcze": 25.0,
+        "weglowodany": 250.0,
+        "kalorie": 1525.0,
+        "data": "2026-08-07"
+    }
+]

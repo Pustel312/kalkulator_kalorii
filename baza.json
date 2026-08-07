@@ -12,5 +12,19 @@
         "tluszcze": 5.0,
         "weglowodany": 50.0,
         "kalorie": 305.0
+    },
+    {
+        "nazwa": "makaron z szpikaniem",
+        "bialko": 20.0,
+        "tluszcze": 5.0,
+        "weglowodany": 45.0,
+        "kalorie": 305.0
+    },
+    {
+        "nazwa": "makaron",
+        "bialko": 10.0,
+        "tluszcze": 10.0,
+        "weglowodany": 10.0,
+        "kalorie": 170.0
     }
 ]
