@@ -16,5 +16,32 @@
         "weglowodany": 250.0,
         "kalorie": 1525.0,
         "data": "2026-08-07"
+    },
+    {
+        "nazwa": "makaron z szpikaniem",
+        "waga": 300,
+        "bialko": 60.0,
+        "tluszcze": 15.0,
+        "weglowodany": 135.0,
+        "kalorie": 915.0,
+        "data": "2026-08-11"
+    },
+    {
+        "nazwa": "makaron z kurczakiem",
+        "waga": 500,
+        "bialko": 100.0,
+        "tluszcze": 15.0,
+        "weglowodany": 200.0,
+        "kalorie": 1335.0,
+        "data": "2026-08-11"
+    },
+    {
+        "nazwa": "makaron z kurczakiem",
+        "waga": 1000,
+        "bialko": 200.0,
+        "tluszcze": 30.0,
+        "weglowodany": 400.0,
+        "kalorie": 2670.0,
+        "data": "2026-08-11"
     }
 ]
