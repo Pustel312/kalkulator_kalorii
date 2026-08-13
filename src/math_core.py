@@ -56,13 +56,11 @@ def calculate_sum(dziennik_posilkow: list[dict])-> dict:
     suma_bialko = 0
     suma_tluszcze = 0
     suma_weglowodany = 0
-    dzisiaj = str(date.today())
     for posilek in dziennik_posilkow:
-        if posilek["data"] == dzisiaj:
-            suma_kalorii += posilek['kalorie']
-            suma_bialko += posilek['bialko']
-            suma_tluszcze += posilek['tluszcze']
-            suma_weglowodany += posilek['weglowodany']
+        suma_kalorii += posilek['kalorie']
+        suma_bialko += posilek['bialko']
+        suma_tluszcze += posilek['tluszcze']
+        suma_weglowodany += posilek['weglowodany']
     podsumowanie = {
         "kalorie": suma_kalorii,
         "bialko": suma_bialko,

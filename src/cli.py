@@ -1,5 +1,5 @@
 from src.math_core import add_new_product, calculate_bmr, calculate_tdee, calculate_macronutrients, adjust_calories_for_goal, calculate_portion, calculate_sum, search_products, get_float_input
-from src.storage import load_products, save_products, load_note, save_note
+from src.database import save_product, save_logs, load_products, load_log_by_date, search_products, delete_log, delete_product
 from datetime import date
 def main():
 #PODSTAWOWE DANE UZYTKOWNIKA
@@ -49,19 +49,18 @@ def main():
 #SPRAWDZANIE MAKROELEMENTOW
     protein, fat, carbs = calculate_macronutrients(weight=weight, tdee=goal)
     print(f"Twoje docelowe kalorie wynoszą {goal}, co przekłada się na: {protein}g białka, {fat}g tłuszczów i {carbs}g węglowodanów.")
-
-    baza_produktow = load_products()
-    dziennik_posilkow = load_note()
     is_running = True
     while is_running:
         print("\n--- BAZA PRODUKTÓW I POSIŁKI ---")
         print("1. Dodaj nowy produkt do kartoteki")
         print("2. Zaloguj zjedzony posiłek")
         print("3. Sprawdź bilans dnia")
+        print("4. Usuń wybrany log")
+        print("5. Usuń wybrany produkt")
         print("0. Powrót do menu głównego")
         
         choice = input("Wybierz opcję: ")
-        while choice not in {"0", "1", "2", "3"}:
+        while choice not in {"0", "1", "2", "3", "4", "5"}:
             print("Opcja nie istnieje!")
             choice = input("Wybierz opcję: ")
 
@@ -73,38 +72,34 @@ def main():
             Nowy_produkt = add_new_product(name=nazwa, proteins=bialko, fat=tluszcze, carbohydrates=wegle)
             kalorie = Nowy_produkt["kalorie"]
             print(f"Twój nowo dodany produkt to: {nazwa}, ktory posiada {kalorie} kalorii")
-            baza_produktow.append(Nowy_produkt)
-            save_products(baza_produktow)
+            save_product(Nowy_produkt)
         elif choice == "2":
-            if not baza_produktow:
-                print("Baza jest pusta!")
+            szukana_fraza = input("Wpisz wyszukiwana fraze ")
+            znalezione = search_products(szukana_fraza)
+            if not znalezione:
+                print("Nie znaleziono żadnego produktu spełniającego kryteria")
             else:
-                szukana_fraza = input("Wpisz wyszukiwana fraze ")
-                znalezione = search_products(baza_produktow, szukana_fraza)
-                if not znalezione:
-                    print("Nie znaleziono żadnego produktu spełniającego kryteria")
-                else:
-                    for idx, produkt in enumerate(znalezione):   
-                        print(f"{idx}. {produkt['nazwa']}")                 
-                    while True:
-                        try:
-                            product_idx = int(input("Wybierz produkt, który chcesz dodać "))
-                            if product_idx in range(0, len(znalezione)):
-                                product_choice = znalezione[product_idx]
-                                weight_choice = get_float_input("Jaka jest waga produktu? ")
-                                porcja = calculate_portion(produkt=product_choice, weight=weight_choice)
-                                porcja["data"] = str(date.today())
-                                print(f"Twój dodany log to: {porcja['nazwa']}, która posiada: B: {porcja['bialko']}, T: {porcja['tluszcze']}, W: {porcja['weglowodany']}, ktore sie skladaja na {porcja['kalorie']} kalorii.")
-                                dziennik_posilkow.append(porcja)
-                                save_note(dziennik_posilkow)
-                                break
-                            else:
-                                print("Produkt nie znajduje się w bazie danych!")
-                        except ValueError:
-                            print("To musi być liczba całkowita!")                    
+                for idx, produkt in enumerate(znalezione):   
+                    print(f"{idx}. {produkt['nazwa']}")                 
+                while True:
+                    try:
+                        product_idx = int(input("Wybierz produkt, który chcesz dodać "))
+                        if product_idx in range(0, len(znalezione)):
+                            product_choice = znalezione[product_idx]
+                            weight_choice = get_float_input("Jaka jest waga produktu? ")
+                            porcja = calculate_portion(produkt=product_choice, weight=weight_choice)
+                            porcja["data"] = str(date.today())
+                            print(f"Twój dodany log to: {porcja['nazwa']}, która posiada: B: {porcja['bialko']}, T: {porcja['tluszcze']}, W: {porcja['weglowodany']}, ktore sie skladaja na {porcja['kalorie']} kalorii.")
+                            save_logs(porcja)
+                            break
+                        else:
+                            print("Produkt nie znajduje się w bazie danych!")
+                    except ValueError:
+                        print("To musi być liczba całkowita!")                    
                     
         elif choice == "3":
-            raport = calculate_sum(dziennik_posilkow)
+            logi = load_log_by_date(str(date.today()))
+            raport = calculate_sum(logi)
             print(f"Twoje dzisiejsze makro to: {raport['kalorie']} kalorii, {raport['bialko']} B, {raport['tluszcze']} T, {raport['weglowodany']} W.")
             roznica = goal - raport["kalorie"]
             if roznica > 0:
@@ -112,6 +107,40 @@ def main():
             else:
                 roznica = abs(roznica)
                 print(f"Przekroczyłeś dzisiejsze zapotrzebowanie kaloryczne o {roznica} kalorii!")
+        elif choice == "4":
+            logi = load_log_by_date(str(date.today()))
+            if not logi:
+                print("Dziennik jest pusty!")
+            else:
+                for idx, log in enumerate(logi):
+                    print(f"{idx}, {log['nazwa']}, {log['kalorie']}")
+                try:
+                    product_dlt = int(input("Wybierz produkt, który chcesz usunąć "))
+                    if product_dlt in range(0, len(logi)):
+                        chosen_id = logi[product_dlt]["id"]
+                        delete_log(chosen_id)
+                    else:
+                        print("Podany log nie istnieje!")
+                
+                except ValueError:
+                    print("To musi być liczba całkowita!")                    
+        elif choice == "5":
+            products = load_products()
+            if not products:
+                print("Baza produktów jest pusta!")
+            else:
+                for idx, product in enumerate(products):
+                    print(f"{idx}, {product['nazwa']}, {product['kalorie']}")
+                try:
+                    product_dlt = int(input("Wybierz produkt, który chcesz usunąć "))
+                    if product_dlt in range(0, len(products)):
+                        chosen_id = products[product_dlt]["id"]
+                        delete_product(chosen_id)
+                    else:
+                        print("Produkt nie znajduje się w bazie danych!")
+                except ValueError:
+                    print("To musi być liczba całkowita!")                    
+
         elif choice == "0":
             is_running = False
 

@@ -53,25 +53,68 @@ def save_product(product: dict):
     conn.commit()
     conn.close()
 
+def save_logs(logs: dict):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    INSERT INTO logs (nazwa, waga, bialko, tluszcze, weglowodany, kalorie, data)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        logs['nazwa'],
+        logs['waga'],
+        logs['bialko'],
+        logs['tluszcze'],
+        logs['weglowodany'],
+        logs['kalorie'],
+        logs['data']
+    ))
+
+    conn.commit()
+    conn.close()
+
 def load_products() -> list[dict]:
     conn = get_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""SELECT nazwa, bialko, tluszcze, weglowodany, kalorie FROM products""")
+    cursor.execute("""SELECT id, nazwa, bialko, tluszcze, weglowodany, kalorie FROM products""")
     rows = cursor.fetchall()
     conn.close()
 
     products = []
     for row in rows:
         product = {
-            "nazwa": row[0],
-            "bialko": row[1],
-            "tluszcze": row[2],
-            "weglowodany": row[3],
-            "kalorie": row[4]
+            "id": row[0],
+            "nazwa": row[1],
+            "bialko": row[2],
+            "tluszcze": row[3],
+            "weglowodany": row[4],
+            "kalorie": row[5]
         }
         products.append(product)
     return products
+
+def load_log_by_date(target_date: str) -> list[dict]:
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""SELECT id, nazwa, waga, bialko, tluszcze, weglowodany, kalorie, data from logs WHERE data = ?""", (target_date,))
+    rows = cursor.fetchall()
+    conn.close()
+    logs = []
+    for row in rows:
+        log = {
+            "id": row[0],
+            "nazwa": row[1],
+            "waga": row[2],
+            "bialko": row[3],
+            "tluszcze": row[4],
+            "weglowodany": row[5],
+            "kalorie": row[6],
+            "data": row[7]
+        }
+        logs.append(log)
+    return logs
 
 def search_products(phrase: str) -> list[dict]:
     conn = get_connection()
@@ -95,5 +138,20 @@ def search_products(phrase: str) -> list[dict]:
         products.append(product)
     return products
 
+def delete_log(log_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""DELETE FROM logs WHERE id = ?""", (log_id,))
+    conn.commit()
+    conn.close()
+
+def delete_product(log_id: int):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""DELETE FROM products WHERE id = ?""", (log_id,))
+    conn.commit()
+    conn.close()
 
 
