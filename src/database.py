@@ -51,7 +51,9 @@ def save_product(product: dict):
     ))
 
     conn.commit()
+    product_id = cursor.lastrowid
     conn.close()
+    return product_id
 
 def save_logs(logs: dict):
     conn = get_connection()
@@ -71,7 +73,9 @@ def save_logs(logs: dict):
     ))
 
     conn.commit()
+    product_id = cursor.lastrowid
     conn.close()
+    return product_id
 
 def load_products() -> list[dict]:
     conn = get_connection()
@@ -93,6 +97,27 @@ def load_products() -> list[dict]:
         }
         products.append(product)
     return products
+
+def load_products_by_id(product_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""SELECT id, nazwa, bialko, tluszcze, weglowodany, kalorie FROM products WHERE id = ?""", (product_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return None
+    else:
+        product = {
+                "id": row[0],
+                "nazwa": row[1],
+                "bialko": row[2],
+                "tluszcze": row[3],
+                "weglowodany": row[4],
+                "kalorie": row[5]
+            }
+        return product
 
 def load_log_by_date(target_date: str) -> list[dict]:
     conn = get_connection()
@@ -121,7 +146,7 @@ def search_products(phrase: str) -> list[dict]:
     cursor = conn.cursor()
 
     cursor.execute(
-        """SELECT nazwa, bialko, tluszcze, weglowodany, kalorie FROM products WHERE nazwa LIKE ?""", (f"%{phrase}%",)
+        """SELECT id, nazwa, bialko, tluszcze, weglowodany, kalorie FROM products WHERE nazwa LIKE ?""", (f"%{phrase}%",)
     )
 
     rows = cursor.fetchall()
@@ -129,11 +154,12 @@ def search_products(phrase: str) -> list[dict]:
     products = []
     for row in rows:
         product = {
-            "nazwa": row[0],
-            "bialko": row[1],
-            "tluszcze": row[2],
-            "weglowodany": row[3],
-            "kalorie": row[4]
+            "id": row[0],
+            "nazwa": row[1],
+            "bialko": row[2],
+            "tluszcze": row[3],
+            "weglowodany": row[4],
+            "kalorie": row[5]
         }
         products.append(product)
     return products

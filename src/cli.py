@@ -92,7 +92,7 @@ def main():
 #PODSTAWOWE DANE UZYTKOWNIKA
     weight = get_float_input("Podaj swoją wagę: ")
     height = get_float_input("Podaj swój wzrost: ")
-    age = get_float_input("Podaj swój wiek: ")
+    age = int(input("Podaj swój wiek: "))
     gender = input("Jakiej jesteś płci? ('m' lub 'k') ").lower().strip()
     while gender not in {"m", "k"}:
         print("Wpisz 'm' lub 'k'!")
