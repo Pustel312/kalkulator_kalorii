@@ -119,6 +119,29 @@ def load_products_by_id(product_id):
             }
         return product
 
+def load_log_by_id(log_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""SELECT id, nazwa, waga, bialko, tluszcze, weglowodany, kalorie, data from logs WHERE id = ?""", (log_id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return None
+    else:
+        log = {
+            "id": row[0],
+            "nazwa": row[1],
+            "waga": row[2],
+            "bialko": row[3],
+            "tluszcze": row[4],
+            "weglowodany": row[5],
+            "kalorie": row[6],
+            "data": row[7]
+        }
+        return log
+    
 def load_log_by_date(target_date: str) -> list[dict]:
     conn = get_connection()
     cursor = conn.cursor()
@@ -164,20 +187,24 @@ def search_products(phrase: str) -> list[dict]:
         products.append(product)
     return products
 
-def delete_log(log_id: int):
+def delete_log(log_id: int) -> bool:
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""DELETE FROM logs WHERE id = ?""", (log_id,))
+    licznik = cursor.rowcount
     conn.commit()
     conn.close()
-
-def delete_product(log_id: int):
+    
+    return licznik > 0
+def delete_product(log_id: int) -> bool:
     conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""DELETE FROM products WHERE id = ?""", (log_id,))
+    licznik = cursor.rowcount
     conn.commit()
     conn.close()
-
+    
+    return licznik > 0
 
