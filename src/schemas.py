@@ -20,7 +20,6 @@ class LogCreate(BaseModel):
 
 class LogResponse(BaseModel):
     id: int
-    name: str
     protein: float
     fat: float
     carbs: float

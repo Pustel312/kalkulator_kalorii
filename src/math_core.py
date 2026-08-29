@@ -1,14 +1,7 @@
-
-def add_new_product(name: str, proteins: float, fat: float, carbohydrates: float) -> dict:
-    calories = round((proteins * 4) + (fat * 9) + (carbohydrates * 4), 2)
-    produkt = {
-        "nazwa": name,
-        "bialko": proteins,
-        "tluszcze": fat,
-        "weglowodany": carbohydrates,
-        "kalorie": calories
-    }
-    return produkt
+from src.models import Product
+def calculate_calories(protein: float, fat: float, carbohydrates: float) -> float:
+    calories = round((protein * 4) + (fat * 9) + (carbohydrates * 4), 2)
+    return calories
 
 
 def calculate_bmr(weight: float, height: float, age: int, gender: str)->float:
@@ -39,15 +32,14 @@ def adjust_calories_for_goal(goal: str, tdee: float)->float:
        return tdee + 400.0
     return tdee
 
-def calculate_portion(produkt: dict, weight: float)->dict:
+def calculate_portion(product: Product, weight: float)->dict:
     conversion_factor = weight/100
     porcja = {
-            "nazwa": produkt["nazwa"],
-            "waga": weight,
-            "bialko": round(produkt["bialko"]*conversion_factor, 2),
-            "tluszcze": round(produkt["tluszcze"]*conversion_factor, 2),
-            "weglowodany": round(produkt["weglowodany"]*conversion_factor, 2),
-            "kalorie": round(produkt["kalorie"]*conversion_factor, 2)
+            "weight": weight,
+            "protein": round(product.protein*conversion_factor, 2),
+            "fat": round(product.fat*conversion_factor, 2),
+            "carbs": round(product.carbs*conversion_factor, 2),
+            "calories": round(product.calories*conversion_factor, 2)
         }
     return porcja
 

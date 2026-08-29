@@ -1,10 +1,5 @@
-from src.cli import main
-from src.database import create_tables
 import uvicorn
 from src.api import app
-
-
-create_tables()
 
 
 if __name__ == "__main__":

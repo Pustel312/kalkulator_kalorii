@@ -1,210 +1,110 @@
-import sqlite3
+from src.models import Product, Log, Base
+from sqlalchemy import create_engine, select
+from sqlalchemy.orm import Session
 
-def get_connection():
-    conn = sqlite3.connect("kalkulator.db")
-    return conn
+engine = create_engine("sqlite:///kalkulator.db")
+Base.metadata.create_all(engine)
+# # # # # # # # # # # # # # # # # # # # # # # # DATABASE # # # # # # # # # # # # # # # # # # # # # # # #
 
-def create_tables():
-    conn = get_connection()
-    cursor = conn.cursor()
+def get_db():
+    with Session(engine) as session:
+        yield session
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nazwa TEXT NOT NULL,
-        bialko REAL NOT NULL,
-        tluszcze REAL NOT NULL,
-        weglowodany REAL NOT NULL,
-        kalorie REAL NOT NULL
-    );
-    """)
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        nazwa TEXT NOT NULL,
-        waga REAL NOT NULL,
-        bialko REAL NOT NULL,
-        tluszcze REAL NOT NULL,
-        weglowodany REAL NOT NULL,
-        kalorie REAL NOT NULL,
-        data TEXT NOT NULL
-    );
-    """)
-
-    conn.commit()
-    conn.close()
-
-def save_product(product: dict):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    INSERT INTO products (nazwa, bialko, tluszcze, weglowodany, kalorie)
-    VALUES (?, ?, ?, ?, ?)
-    """, (
-        product['nazwa'],
-        product['bialko'],
-        product['tluszcze'],
-        product['weglowodany'],
-        product['kalorie']
-    ))
-
-    conn.commit()
-    product_id = cursor.lastrowid
-    conn.close()
-    return product_id
-
-def save_logs(logs: dict):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    INSERT INTO logs (nazwa, waga, bialko, tluszcze, weglowodany, kalorie, data)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (
-        logs['nazwa'],
-        logs['waga'],
-        logs['bialko'],
-        logs['tluszcze'],
-        logs['weglowodany'],
-        logs['kalorie'],
-        logs['data']
-    ))
-
-    conn.commit()
-    product_id = cursor.lastrowid
-    conn.close()
-    return product_id
-
-def load_products() -> list[dict]:
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""SELECT id, nazwa, bialko, tluszcze, weglowodany, kalorie FROM products""")
-    rows = cursor.fetchall()
-    conn.close()
-
-    products = []
-    for row in rows:
-        product = {
-            "id": row[0],
-            "nazwa": row[1],
-            "bialko": row[2],
-            "tluszcze": row[3],
-            "weglowodany": row[4],
-            "kalorie": row[5]
-        }
-        products.append(product)
-    return products
-
-def load_products_by_id(product_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""SELECT id, nazwa, bialko, tluszcze, weglowodany, kalorie FROM products WHERE id = ?""", (product_id,))
-    row = cursor.fetchone()
-    conn.close()
-
-    if not row:
-        return None
-    else:
-        product = {
-                "id": row[0],
-                "nazwa": row[1],
-                "bialko": row[2],
-                "tluszcze": row[3],
-                "weglowodany": row[4],
-                "kalorie": row[5]
-            }
-        return product
-
-def load_log_by_id(log_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""SELECT id, nazwa, waga, bialko, tluszcze, weglowodany, kalorie, data from logs WHERE id = ?""", (log_id,))
-    row = cursor.fetchone()
-    conn.close()
-
-    if not row:
-        return None
-    else:
-        log = {
-            "id": row[0],
-            "nazwa": row[1],
-            "waga": row[2],
-            "bialko": row[3],
-            "tluszcze": row[4],
-            "weglowodany": row[5],
-            "kalorie": row[6],
-            "data": row[7]
-        }
-        return log
-    
-def load_log_by_date(target_date: str) -> list[dict]:
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""SELECT id, nazwa, waga, bialko, tluszcze, weglowodany, kalorie, data from logs WHERE data = ?""", (target_date,))
-    rows = cursor.fetchall()
-    conn.close()
-    logs = []
-    for row in rows:
-        log = {
-            "id": row[0],
-            "nazwa": row[1],
-            "waga": row[2],
-            "bialko": row[3],
-            "tluszcze": row[4],
-            "weglowodany": row[5],
-            "kalorie": row[6],
-            "data": row[7]
-        }
-        logs.append(log)
-    return logs
-
-def search_products(phrase: str) -> list[dict]:
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute(
-        """SELECT id, nazwa, bialko, tluszcze, weglowodany, kalorie FROM products WHERE nazwa LIKE ?""", (f"%{phrase}%",)
+# # # # # # # # # # # # # # # # # # # # # # # # PRODUCTS # # # # # # # # # # # # # # # # # # # # # # # #
+def create_product(
+        session: Session,
+        name: str,
+        protein: float,
+        fat: float,
+        carbs: float,
+        calories: float,
+):
+    product = Product(
+        name=name,
+        protein=protein,
+        fat=fat,
+        carbs=carbs,
+        calories=calories,
+        active=True  
     )
+    session.add(product)
+    session.commit()
+    session.refresh(product)
+    return product
 
-    rows = cursor.fetchall()
-    conn.close()
-    products = []
-    for row in rows:
-        product = {
-            "id": row[0],
-            "nazwa": row[1],
-            "bialko": row[2],
-            "tluszcze": row[3],
-            "weglowodany": row[4],
-            "kalorie": row[5]
-        }
-        products.append(product)
+def load_products(session: Session):
+    stmt = select(Product)
+    result = session.execute(stmt)
+    products = result.scalars().all()
     return products
 
-def delete_log(log_id: int) -> bool:
-    conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""DELETE FROM logs WHERE id = ?""", (log_id,))
-    licznik = cursor.rowcount
-    conn.commit()
-    conn.close()
+def load_products_by_id(session: Session, product_id: int):
+    product = session.get(Product, product_id)
+    return product
+
+def search_products(
+        phrase: str,
+        session: Session
+):
+    stmt = select(Product).where(Product.name.contains(phrase))
+    result = session.execute(stmt)
+    search_result = result.scalars().all()
+    return search_result
+
+def delete_product(session: Session, product_id: int):
+    product = session.get(Product, product_id)
+    if not product:
+        return False
+    session.delete(product)
+    session.commit()
+    return True
+
+# # # # # # # # # # # # # # # # # # # # # # # # LOGS # # # # # # # # # # # # # # # # # # # # # # # #
+
+def create_log(
+        session: Session,
+        product_id: int,
+        weight: float,
+        protein: float,
+        fat: float,
+        carbs: float,
+        calories: float,
+        date: str
+    ):
+    log = Log(
+        product_id=product_id,
+        weight=weight,
+        protein=protein,
+        fat=fat,
+        carbs=carbs,
+        calories=calories,
+        date=date
+    )
+    session.add(log)
+    session.commit()
+    session.refresh(log)
+    return log
+
+def load_log_by_id(session: Session, log_id: int):
+    log = session.get(Log, log_id)
+    return log
     
-    return licznik > 0
-def delete_product(log_id: int) -> bool:
-    conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("""DELETE FROM products WHERE id = ?""", (log_id,))
-    licznik = cursor.rowcount
-    conn.commit()
-    conn.close()
+def load_log_by_date(
+        date: str,
+        session: Session
+    ):
+    smtm = select(Log).where(Log.date == date)
+    result = session.execute(smtm)
+    logs = result.scalars().all()
+    return logs
     
-    return licznik > 0
 
+def delete_log(session: Session, log_id: int):
+    log = session.get(Log, log_id)
+    if not log:
+        return False
+    session.delete(log)
+    session.commit()
+    return True
