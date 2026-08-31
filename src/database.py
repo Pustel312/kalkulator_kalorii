@@ -1,8 +1,15 @@
 from src.models import Product, Log, Base
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, event
 from sqlalchemy.orm import Session
 
 engine = create_engine("sqlite:///kalkulator.db")
+
+@event.listens_for(engine, "connect")
+def enable_sqlite_foreign_keys(dbapi_connection, connection_record):    
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys = ON")
+    cursor.close()
+    
 Base.metadata.create_all(engine)
 # # # # # # # # # # # # # # # # # # # # # # # # DATABASE # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -33,31 +40,34 @@ def create_product(
     return product
 
 def load_products(session: Session):
-    stmt = select(Product)
+    stmt = select(Product).where(Product.active.is_(True))
     result = session.execute(stmt)
     products = result.scalars().all()
     return products
 
 
 def load_products_by_id(session: Session, product_id: int):
-    product = session.get(Product, product_id)
+    stmt = select(Product).where(Product.id == product_id, Product.active.is_(True))
+    result = session.execute(stmt)
+    product = result.scalar_one_or_none()
     return product
 
 def search_products(
         phrase: str,
         session: Session
 ):
-    stmt = select(Product).where(Product.name.contains(phrase))
+    stmt = select(Product).where(Product.name.contains(phrase)).where(Product.active.is_(True))
     result = session.execute(stmt)
     search_result = result.scalars().all()
     return search_result
 
 def delete_product(session: Session, product_id: int):
-    product = session.get(Product, product_id)
+    product = load_products_by_id(session, product_id)
     if not product:
         return False
-    session.delete(product)
+    product.active = False
     session.commit()
+
     return True
 
 # # # # # # # # # # # # # # # # # # # # # # # # LOGS # # # # # # # # # # # # # # # # # # # # # # # #
