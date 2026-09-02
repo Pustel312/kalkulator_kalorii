@@ -1,4 +1,6 @@
 from src.models import Product, Log, Base
+from src.schemas import ProductUpdate
+from src.math_core import calculate_calories
 from sqlalchemy import create_engine, select, event
 from sqlalchemy.orm import Session
 
@@ -60,6 +62,22 @@ def search_products(
     result = session.execute(stmt)
     search_result = result.scalars().all()
     return search_result
+
+def update_product(session: Session, product_id: int, product_update: ProductUpdate):
+    product = load_products_by_id(session, product_id)
+    if not product:
+        return False
+    update_data = product_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(product, field, value)
+    if any(field in update_data for field in ["protein", "fat", "carbs"]):
+        product.calories = calculate_calories(
+        product.protein,
+        product.fat,
+        product.carbs
+    )
+    session.commit()
+    return product
 
 def delete_product(session: Session, product_id: int):
     product = load_products_by_id(session, product_id)

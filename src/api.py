@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
-from src.schemas import ProductCreate, ProductResponse, LogCreate, LogResponse
+from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse
 from src.math_core import calculate_calories, calculate_portion
-from src.database import get_db, create_product, load_products, load_products_by_id, search_products, delete_product,  create_log, load_log_by_id, load_log_by_date, delete_log
+from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, delete_log
 from sqlalchemy.orm import Session
 from datetime import date
 
@@ -50,6 +50,24 @@ def get_products_by_phrase(
     ):
     products = search_products(phrase, session)
     return products
+
+@app.patch("/products/{product_id}", tags=["Products"], response_model=ProductResponse)
+def update_product_endpoint(
+    product_id: int,
+    product_update: ProductUpdate,
+    session: Session = Depends(get_db)
+):
+    updated_product = update_product(
+        session,
+        product_id,
+        product_update
+    )
+    if not updated_product:
+        raise HTTPException(status_code=404, detail="Product not found")
+        
+    return updated_product
+
+
 @app.delete("/products/{product_id}", tags=["Products"])
 def delete_products(
     product_id: int,

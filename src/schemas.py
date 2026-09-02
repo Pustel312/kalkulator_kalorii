@@ -14,6 +14,12 @@ class ProductResponse(ProductCreate):
     class Config:
         from_attributes = True
 
+class ProductUpdate(BaseModel):
+    name: str | None = None
+    protein: float | None = None
+    fat: float | None = None
+    carbs: float | None = None
+    
 class LogCreate(BaseModel):
     product_id: int = Field(..., ge=0, description="Id produktu")
     weight: float = Field(..., ge=0, description="Waga produktu")
