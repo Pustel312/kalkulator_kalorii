@@ -1,7 +1,7 @@
 from src.models import Product, Log, Base
 from src.schemas import ProductUpdate
 from src.math_core import calculate_calories
-from sqlalchemy import create_engine, select, event
+from sqlalchemy import create_engine, select, event, func
 from sqlalchemy.orm import Session
 
 engine = create_engine("sqlite:///kalkulator.db")
@@ -128,7 +128,25 @@ def load_log_by_date(
     logs = result.scalars().all()
     return logs
     
-
+def sum_day(
+        target_date: str,
+        session: Session
+    ):
+    result = select(
+        func.coalesce(func.sum(Log.calories), 0),
+        func.coalesce(func.sum(Log.protein), 0),
+        func.coalesce(func.sum(Log.fat), 0),
+        func.coalesce(func.sum(Log.carbs), 0),
+        func.count(Log.id)
+    ).where(Log.date == target_date)
+    calories, protein, fat, carbs, log_count = session.execute(result).one()
+    return {
+        "calories": calories,
+        "protein": protein,
+        "fat": fat,
+        "carbs": carbs,
+        "log_count": log_count
+    }
 def delete_log(session: Session, log_id: int):
     log = session.get(Log, log_id)
     if not log:

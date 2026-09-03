@@ -34,3 +34,10 @@ class LogResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class DailyReport(BaseModel):
+    calories: float
+    protein: float
+    fat: float
+    carbs: float
+    log_count: int

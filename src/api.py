@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
-from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse
+from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport
 from src.math_core import calculate_calories, calculate_portion
-from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, delete_log
+from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log
 from sqlalchemy.orm import Session
 from datetime import date
 
@@ -121,7 +121,6 @@ def get_logs_by_date(
     logs = load_log_by_date(target_date, session)
     return logs
 
-
 @app.delete("/logs/{entry_id}", tags=["Logs"])
 def delete_logs_endpoint(
     entry_id: int,
@@ -133,4 +132,12 @@ def delete_logs_endpoint(
         raise HTTPException(status_code=404, detail="Log not found")
     return {"status": "ok", "message": "Log is deleted"}    
 
-    
+# # # # # # # # # # # # # # # # # # # # # # # # REPORTS # # # # # # # # # # # # # # # # # # # # # # # #
+
+@app.get("/reports/daily-summary", response_model=DailyReport, tags=["Reports"])
+def sum_day_endpoint(
+    target_date: str,
+    session: Session = Depends(get_db)
+    ):
+    raport = sum_day(target_date, session)
+    return raport 
