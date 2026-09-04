@@ -128,6 +128,16 @@ def load_log_by_date(
     logs = result.scalars().all()
     return logs
     
+def delete_log(session: Session, log_id: int):
+    log = session.get(Log, log_id)
+    if not log:
+        return False
+    session.delete(log)
+    session.commit()
+    return True
+
+# # # # # # # # # # # # # # # # # # # # # # # # REPORTS # # # # # # # # # # # # # # # # # # # # # # # #
+
 def sum_day(
         target_date: str,
         session: Session
@@ -147,10 +157,3 @@ def sum_day(
         "carbs": carbs,
         "log_count": log_count
     }
-def delete_log(session: Session, log_id: int):
-    log = session.get(Log, log_id)
-    if not log:
-        return False
-    session.delete(log)
-    session.commit()
-    return True

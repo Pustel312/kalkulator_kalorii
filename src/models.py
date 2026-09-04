@@ -15,7 +15,10 @@ class Product(Base):
     carbs: Mapped[float]
     calories: Mapped[float]
     active: Mapped[bool]
+    description: Mapped[str | None] = mapped_column(nullable=True)
+    
     logs: Mapped[list["Log"]] = relationship(back_populates="product")
+    
 class Log(Base):
     __tablename__="logs"
 
