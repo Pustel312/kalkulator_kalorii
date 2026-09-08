@@ -90,7 +90,7 @@ def create_log_endpoint(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     portion_data = calculate_portion(product, dane.weight)
-    data = str(date.today())
+    data = date.today()
     created_log = create_log(
         session=session,
         product_id = dane.product_id,

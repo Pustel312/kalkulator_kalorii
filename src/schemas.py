@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-
+from datetime import date
 class ProductCreate(BaseModel):
     name: str = Field(..., min_length=1, description="Nazwa produktu")
     protein: float = Field(..., ge=0, description="Białko w 100g (>=0)")
@@ -30,7 +30,7 @@ class LogResponse(BaseModel):
     fat: float
     carbs: float
     calories: float
-    date: str
+    date: date
     
     class Config:
         from_attributes = True

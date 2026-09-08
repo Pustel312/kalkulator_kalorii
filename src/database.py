@@ -1,17 +1,16 @@
 from src.models import Product, Log, Base
 from src.schemas import ProductUpdate
 from src.math_core import calculate_calories
-from sqlalchemy import create_engine, select, event, func
+from sqlalchemy import create_engine, select, func
 from sqlalchemy.orm import Session
+import os
+from dotenv import load_dotenv
 
-engine = create_engine("sqlite:///kalkulator.db")
+load_dotenv()
 
-@event.listens_for(engine, "connect")
-def enable_sqlite_foreign_keys(dbapi_connection, connection_record):    
-    cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA foreign_keys = ON")
-    cursor.close()
-    
+DATABASE_URL = os.getenv("DATABASE_URL")
+engine = create_engine(DATABASE_URL)
+
 Base.metadata.create_all(engine)
 # # # # # # # # # # # # # # # # # # # # # # # # DATABASE # # # # # # # # # # # # # # # # # # # # # # # #
 

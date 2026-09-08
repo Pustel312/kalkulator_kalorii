@@ -1,5 +1,6 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from datetime import date
 
 
 class Base(DeclarativeBase):
@@ -29,7 +30,7 @@ class Log(Base):
     fat: Mapped[float]
     carbs: Mapped[float]
     calories: Mapped[float]
-    date: Mapped[str]
+    date: Mapped[date]
     product: Mapped["Product"] = relationship(back_populates="logs")
 
 
