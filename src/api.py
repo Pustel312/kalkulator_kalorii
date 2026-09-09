@@ -37,6 +37,11 @@ def create_product_endpoint(
         carbs=product.carbs,
         calories=calculated_calories
     )
+    if created_product is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Active product with this name already exists"
+        )
     return created_product
 @app.get("/products", tags=["Products"], response_model=list[ProductResponse])
 def get_products(session: Session = Depends(get_db)):

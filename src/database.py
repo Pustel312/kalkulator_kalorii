@@ -27,6 +27,11 @@ def create_product(
         carbs: float,
         calories: float,
 ):
+    stmt = select(Product).where(Product.active.is_(True), Product.name == name)
+    result = session.execute(stmt)
+    existing_product = result.scalar_one_or_none()
+    if existing_product:
+        return None
     product = Product(
         name=name,
         protein=protein,

@@ -15,10 +15,10 @@ class ProductResponse(ProductCreate):
         from_attributes = True
 
 class ProductUpdate(BaseModel):
-    name: str | None = None
-    protein: float | None = None
-    fat: float | None = None
-    carbs: float | None = None
+    name: str | None = Field(default=None, min_length=1)
+    protein: float | None = Field(default=None, ge=0)
+    fat: float | None = Field(default=None, ge=0)
+    carbs: float | None = Field(default=None, ge=0)
     
 class LogCreate(BaseModel):
     product_id: int = Field(..., ge=0, description="Id produktu")
