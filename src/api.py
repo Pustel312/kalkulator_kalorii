@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
-from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport
+from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport
 from src.math_core import calculate_calories, calculate_portion
-from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log
+from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log
 from sqlalchemy.orm import Session
 from datetime import date
 
@@ -146,3 +146,13 @@ def sum_day_endpoint(
     ):
     raport = sum_day(target_date, session)
     return raport 
+
+@app.get("/report/top", response_model=list[Top3Report], tags=["Reports"])
+def report_top_eaten_products_endpoint(session: Session = Depends(get_db)):
+    report = report_top_eaten_products(session)
+    return report
+
+@app.get("/report/avg", response_model=list[AvgWeightReport], tags=["Reports"])
+def report_average_weight_of_log_endpoint(session: Session = Depends(get_db)):
+    report = report_average_weight_of_log(session)
+    return report

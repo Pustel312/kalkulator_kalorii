@@ -1,5 +1,5 @@
 from src.models import Product, Log, Base
-from src.schemas import ProductUpdate
+from src.schemas import ProductUpdate, Top3Report, AvgWeightReport
 from src.math_core import calculate_calories
 from sqlalchemy import create_engine, select, func
 from sqlalchemy.orm import Session
@@ -161,3 +161,44 @@ def sum_day(
         "carbs": carbs,
         "log_count": log_count
     }
+
+def report_top_eaten_products(session: Session):
+    stmt = select(
+        Product.name,
+        func.count(Log.product_id).label("liczba_logow"),
+        func.sum(Log.weight).label("suma_wagi")
+    ).join(Product, Log.product_id == Product.id).group_by(Product.name).order_by(func.count(Log.product_id).desc()).limit(3)
+
+    result = session.execute(stmt)
+    rows = result.all()
+    report = []
+    for name, number_of_logs, weight_sum in rows:
+        report.append(
+            Top3Report(
+                name = name,
+                number_of_logs = number_of_logs,
+                weight_sum = weight_sum
+            )
+        )
+    return report
+
+def report_average_weight_of_log(session: Session):
+    stmt = select(
+        Product.name,
+        func.count(Log.id).label("liczba_logow"),
+        func.avg(Log.weight).label("srednia_waga")
+    ).join(Product, Log.product_id == Product.id).group_by(Product.name).having(func.count(Log.id) >= 2).order_by(func.avg(Log.weight).desc())
+    result = session.execute(stmt)
+    rows = result.all()
+    report = []
+    for name, number_of_logs, weight_avg in rows:
+        report.append(
+            AvgWeightReport(
+                name = name,
+                number_of_logs = number_of_logs,
+                weight_avg = round(weight_avg, 2)
+            )
+        )
+    return report
+
+
