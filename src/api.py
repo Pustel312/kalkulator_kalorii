@@ -3,7 +3,7 @@ from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate
 from src.math_core import calculate_calories, calculate_portion
 from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log
 from sqlalchemy.orm import Session
-from datetime import date
+from datetime import date as Date
 
 # # # # # # # # # # # # # # # # # # # # # # # # FASTAPI # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -95,7 +95,7 @@ def create_log_endpoint(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     portion_data = calculate_portion(product, dane.weight)
-    data = date.today()
+    data = Date.today()
     created_log = create_log(
         session=session,
         product_id = dane.product_id,
@@ -120,7 +120,7 @@ def get_log_by_id(
 
 @app.get("/logs", response_model=list[LogResponse], tags=["Logs"])
 def get_logs_by_date(
-    target_date: str,
+    target_date: Date,
     session: Session = Depends(get_db)
     ):
     logs = load_log_by_date(target_date, session)
@@ -141,7 +141,7 @@ def delete_logs_endpoint(
 
 @app.get("/reports/daily-summary", response_model=DailyReport, tags=["Reports"])
 def sum_day_endpoint(
-    target_date: str,
+    target_date: Date,
     session: Session = Depends(get_db)
     ):
     raport = sum_day(target_date, session)

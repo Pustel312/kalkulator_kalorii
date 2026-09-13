@@ -1,6 +1,6 @@
 from sqlalchemy import ForeignKey, CheckConstraint, text, Index
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from datetime import date
+from datetime import date as Date
 
 
 class Base(DeclarativeBase):
@@ -10,7 +10,7 @@ class Product(Base):
     __tablename__="products"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(unique=True)
+    name: Mapped[str]
     protein: Mapped[float]
     fat: Mapped[float]
     carbs: Mapped[float]
@@ -43,7 +43,7 @@ class Log(Base):
     fat: Mapped[float]
     carbs: Mapped[float]
     calories: Mapped[float]
-    date: Mapped[date]
+    date: Mapped[Date] = mapped_column(index=True)
     product: Mapped["Product"] = relationship(back_populates="logs")
     #L from Logs for args
     __table_args__ = (

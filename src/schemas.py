@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from datetime import date
+from datetime import date as Date
 
 # # # # # # # # # # # # # # # # # # # # # # # # PRODUCTS # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -35,7 +35,7 @@ class LogResponse(BaseModel):
     fat: float
     carbs: float
     calories: float
-    date: date
+    date: Date
     
     class Config:
         from_attributes = True

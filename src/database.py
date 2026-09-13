@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, select, func
 from sqlalchemy.orm import Session
 import os
 from dotenv import load_dotenv
+from datetime import date as Date
 
 load_dotenv()
 
@@ -102,7 +103,7 @@ def create_log(
         fat: float,
         carbs: float,
         calories: float,
-        date: str
+        date: Date
     ):
     log = Log(
         product_id=product_id,
@@ -124,7 +125,7 @@ def load_log_by_id(session: Session, log_id: int):
     
 
 def load_log_by_date(
-        date: str,
+        date: Date,
         session: Session
     ):
     smtm = select(Log).where(Log.date == date)
@@ -143,7 +144,7 @@ def delete_log(session: Session, log_id: int):
 # # # # # # # # # # # # # # # # # # # # # # # # REPORTS # # # # # # # # # # # # # # # # # # # # # # # #
 
 def sum_day(
-        target_date: str,
+        target_date: Date,
         session: Session
     ):
     result = select(
