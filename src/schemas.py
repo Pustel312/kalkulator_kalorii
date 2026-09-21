@@ -1,10 +1,12 @@
 from pydantic import BaseModel, Field
-from datetime import date as Date
-
+from datetime import date as Date, datetime
+from src.enums import ProductType
 # # # # # # # # # # # # # # # # # # # # # # # # PRODUCTS # # # # # # # # # # # # # # # # # # # # # # # #
+
 
 class ProductCreate(BaseModel):
     name: str = Field(..., min_length=1, description="Nazwa produktu")
+    type: ProductType = Field(..., description="Typ produktu")
     protein: float = Field(..., ge=0, description="Białko w 100g (>=0)")
     fat: float = Field(..., ge=0, description="Tłuszcze w 100g (>=0)")
     carbs: float = Field(..., ge=0, description="Węglowodany w 100g (>=0)")
@@ -18,11 +20,30 @@ class ProductResponse(ProductCreate):
         from_attributes = True
 
 class ProductUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1)
+    name: str | None = Field(..., min_length=1, description="Nazwa produktu")
+    type: ProductType = Field(..., description="Typ produktu")
     protein: float | None = Field(default=None, ge=0)
     fat: float | None = Field(default=None, ge=0)
     carbs: float | None = Field(default=None, ge=0)
 
+# # # # # # # # # # # # # # # # # # # # # # # # COMPONENTS # # # # # # # # # # # # # # # # # # # # # # # #
+
+class ProductComponentCreate(BaseModel):
+    product_id: int
+    weight: float = Field(..., gt=0, description="Waga komponentu")
+    
+class ProductCreateComposed(BaseModel):
+    name: str = Field(..., min_length=1, description="Nazwa produktu")
+    type: ProductType = Field(..., description="Typ produktu")
+    components: list[ProductComponentCreate] = Field(..., min_length=1, description="Komponenty")
+class ProductComponentDetails(BaseModel):
+    product_id: int
+    name: str
+    weight: float
+class ProductComponentResult(BaseModel):
+    id: int
+    name: str = Field(..., min_length=1, description="Nazwa produktu")
+    components: list[ProductComponentDetails] = Field(..., min_length=1, description="Komponenty")
 # # # # # # # # # # # # # # # # # # # # # # # # LOGS # # # # # # # # # # # # # # # # # # # # # # # #
     
 class LogCreate(BaseModel):
@@ -31,6 +52,7 @@ class LogCreate(BaseModel):
 
 class LogResponse(BaseModel):
     id: int
+    product_type: ProductType
     protein: float
     fat: float
     carbs: float
@@ -58,3 +80,15 @@ class AvgWeightReport(BaseModel):
     name: str
     number_of_logs: int
     weight_avg: float
+
+# # # # # # # # # # # # # # # # # # # # # # # # USERS # # # # # # # # # # # # # # # # # # # # # # # #
+
+class UserCreate(BaseModel):
+    email: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    active: bool
+    created_at: datetime

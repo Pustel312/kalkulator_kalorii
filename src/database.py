@@ -1,5 +1,6 @@
-from src.models import Product, Log, Base
-from src.schemas import ProductUpdate, Top3Report, AvgWeightReport
+from src.models import Product, Log, Base, ProductComponent
+from src.schemas import ProductUpdate, Top3Report, AvgWeightReport, ProductComponentCreate
+from src.enums import ProductType
 from src.math_core import calculate_calories
 from sqlalchemy import create_engine, select, func
 from sqlalchemy.orm import Session
@@ -23,6 +24,7 @@ def get_db():
 def create_product(
         session: Session,
         name: str,
+        product_type: ProductType,
         protein: float,
         fat: float,
         carbs: float,
@@ -35,6 +37,7 @@ def create_product(
         return None
     product = Product(
         name=name,
+        type=product_type,
         protein=protein,
         fat=fat,
         carbs=carbs,
@@ -92,12 +95,35 @@ def delete_product(session: Session, product_id: int):
     session.commit()
 
     return True
+# # # # # # # # # # # # # # # # # # # # # # # # COMPONENTS # # # # # # # # # # # # # # # # # # # # # # # #
+def load_components(session: Session, product_ids: list[int]):
+    stmt = select(Product).where(Product.id.in_(product_ids))
+    result = session.execute(stmt)
+    component = result.scalars().all()
+    return component
+
+def create_component(
+    session: Session,
+    parent_product_id: int,
+    component_product_id: int,
+    weight: float
+    ):
+    component = ProductComponent(
+        parent_product_id=parent_product_id,
+        component_product_id=component_product_id,
+        weight=weight
+    )
+    session.add(component)
+    session.commit()
+    session.refresh(component)
+    return component
 
 # # # # # # # # # # # # # # # # # # # # # # # # LOGS # # # # # # # # # # # # # # # # # # # # # # # #
 
 def create_log(
         session: Session,
         product_id: int,
+        product_type: ProductType,
         weight: float,
         protein: float,
         fat: float,
@@ -107,6 +133,7 @@ def create_log(
     ):
     log = Log(
         product_id=product_id,
+        product_type=product_type,
         weight=weight,
         protein=protein,
         fat=fat,

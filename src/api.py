@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
-from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport
-from src.math_core import calculate_calories, calculate_portion
-from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log
+from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport, ProductComponentCreate, ProductCreateComposed, ProductComponentResult
+from src.math_core import calculate_calories, calculate_portion, calculate_components_macro
+from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log, load_components, create_component
 from sqlalchemy.orm import Session
 from datetime import date as Date
 
@@ -32,6 +32,7 @@ def create_product_endpoint(
     created_product = create_product(
         session=session,
         name=product.name,
+        product_type=product.type,
         protein=product.protein,
         fat=product.fat,
         carbs=product.carbs,
@@ -69,7 +70,6 @@ def update_product_endpoint(
     )
     if not updated_product:
         raise HTTPException(status_code=404, detail="Product not found")
-        
     return updated_product
 
 
@@ -83,7 +83,61 @@ def delete_products(
     if not deleted:
         raise HTTPException(status_code=404, detail="Product not found")
     return {"status": "ok", "message": "Product is deleted"}
+# # # # # # # # # # # # # # # # # # # # # # # # COMPONENTS # # # # # # # # # # # # # # # # # # # # # # # #
+@app.post("/components/composed", tags=["Components"])
+def create_composed_product_endpoint(
+    product: ProductCreateComposed,
+    session: Session = Depends(get_db)
+    ):
+    product_ids = []
+    for component in product.components:
+        product_id = component.product_id
+        product_ids.append(product_id)
+    product_list = load_components(session, product_ids)
+    macros = calculate_components_macro(product_list=product_list, product=product.components)
+    created_product = create_product(
+        session=session,
+        name=product.name,
+        product_type=product.type,
+        protein=macros["protein"],
+        fat=macros["fat"],
+        carbs=macros["carbs"],
+        calories=macros["calories"]
+    )
 
+    for component in product.components:
+        create_component(
+            session=session,
+            parent_product_id=created_product.id,
+            component_product_id=component.product_id,
+            weight=component.weight
+        )
+    return created_product
+
+@app.get("/products/{product_id}/details", response_model=ProductComponentResult, tags=["Components"])
+def get_composed_product_details(
+    product_id: int,
+    session: Session = Depends(get_db)
+    ):
+    product = load_products_by_id(session, product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    components = product.components
+    component_list = []
+    for component in components:
+        weight = component.weight
+        component_product = component.component_product
+        component_data = {
+            "product_id": component_product.id,
+            "name": component_product.name,
+            "weight": weight
+        }
+        component_list.append(component_data)
+    return {
+        "id": product.id,
+        "name": product.name,
+        "components": component_list
+    }
 # # # # # # # # # # # # # # # # # # # # # # # # LOGS # # # # # # # # # # # # # # # # # # # # # # # #
 
 @app.post("/logs", tags=["Logs"], response_model=LogResponse)
@@ -99,6 +153,7 @@ def create_log_endpoint(
     created_log = create_log(
         session=session,
         product_id = dane.product_id,
+        product_type = product.type,
         weight=dane.weight,
         protein=portion_data["protein"],
         fat=portion_data["fat"],
