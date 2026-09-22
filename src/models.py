@@ -41,7 +41,6 @@ class Product(Base):
         )
     )
 
-
 class ProductComponent(Base):
     __tablename__="product_components"
 
@@ -56,15 +55,6 @@ class ProductComponent(Base):
     __table_args__ = (
         CheckConstraint("weight > 0", name="PCweight_higher_than_zero"),
     )
-
-
-
-
-
-
-
-
-
 
 class Log(Base):
     __tablename__="logs"
@@ -87,11 +77,6 @@ class Log(Base):
         CheckConstraint("carbs >= 0", name="Lcarbs_nonnegative"),
         CheckConstraint("calories >= 0", name="Lcalories_nonnegative"),
     )
-
-
-
-
-
 
 class User(Base):
     __tablename__="users"

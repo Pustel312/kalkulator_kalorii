@@ -1,5 +1,5 @@
-from src.models import Product, Log, Base, ProductComponent
-from src.schemas import ProductUpdate, Top3Report, AvgWeightReport, ProductComponentCreate
+from src.models import Product, Log, Base, ProductComponent, User
+from src.schemas import ProductUpdate, Top3Report, AvgWeightReport
 from src.enums import ProductType
 from src.math_core import calculate_calories
 from sqlalchemy import create_engine, select, func
@@ -229,4 +229,22 @@ def report_average_weight_of_log(session: Session):
         )
     return report
 
+# # # # # # # # # # # # # # # # # # # # # # # # USERS # # # # # # # # # # # # # # # # # # # # # # # #
 
+def load_user_by_email(session: Session, email: str):
+    stmt = select(User).where(User.email == email)
+    result = session.execute(stmt)
+    user = result.scalar_one_or_none()
+    return user
+
+def create_user(session: Session,
+    email: str,
+    password_hash: str):
+    user = User(
+        email=email,
+        password_hash=password_hash
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user

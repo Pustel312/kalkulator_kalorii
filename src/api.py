@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends
-from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport, ProductComponentCreate, ProductCreateComposed, ProductComponentResult
+from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport, ProductCreateComposed, ProductComponentResult, UserCreate, UserResponse
 from src.math_core import calculate_calories, calculate_portion, calculate_components_macro
-from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log, load_components, create_component
+from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log, load_components, create_component, load_user_by_email, create_user
+from src.security import hash_password, verify_password
 from sqlalchemy.orm import Session
 from datetime import date as Date
 
@@ -211,3 +212,25 @@ def report_top_eaten_products_endpoint(session: Session = Depends(get_db)):
 def report_average_weight_of_log_endpoint(session: Session = Depends(get_db)):
     report = report_average_weight_of_log(session)
     return report
+
+# # # # # # # # # # # # # # # # # # # # # # # # USERS # # # # # # # # # # # # # # # # # # # # # # # #
+@app.post("/users/register", tags=["Users"], response_model=UserResponse)
+def user_create_endpoint(
+    user: UserCreate,
+    session: Session = Depends(get_db)
+    ):
+    check_user = load_user_by_email(
+        session=session,
+        email=user.email)
+    if check_user:
+        raise HTTPException(
+                    status_code=409,
+                    detail="User with this email already exists"
+                ) 
+    hashed_password = hash_password(user.password)
+    new_user = create_user(
+        session=session,
+        email=user.email,
+        password_hash=hashed_password
+    )
+    return new_user
