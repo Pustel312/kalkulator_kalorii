@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends
-from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport, ProductCreateComposed, ProductComponentResult, UserCreate, UserResponse
+from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport, ProductCreateComposed, ProductComponentResult, UserCreate, UserResponse, UserLogin
 from src.math_core import calculate_calories, calculate_portion, calculate_components_macro
 from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log, load_components, create_component, load_user_by_email, create_user
-from src.security import hash_password, verify_password
+from src.security import hash_password, verify_password, create_access_token
 from sqlalchemy.orm import Session
 from datetime import date as Date
 
@@ -225,7 +225,7 @@ def user_create_endpoint(
     if check_user:
         raise HTTPException(
                     status_code=409,
-                    detail="User with this email already exists"
+                    detail="Invalid email or password"
                 ) 
     hashed_password = hash_password(user.password)
     new_user = create_user(
@@ -234,3 +234,29 @@ def user_create_endpoint(
         password_hash=hashed_password
     )
     return new_user
+
+@app.post("/users/login", tags=["Users"])
+def user_login_endpoint(
+    user: UserLogin,
+    session: Session = Depends(get_db)
+    ):
+    check_user = load_user_by_email(
+        session=session,
+        email=user.email
+    )
+    if not check_user:
+        raise HTTPException(
+                    status_code=401,
+                    detail="Invalid email or password"
+                ) 
+    verifying = verify_password(user.password, check_user.password_hash)
+    if not verifying:
+        raise HTTPException(
+                    status_code=401,
+                    detail="Wrong password"
+                )
+    access_token = create_access_token(check_user.id)
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }

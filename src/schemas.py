@@ -92,3 +92,7 @@ class UserResponse(BaseModel):
     email: str
     active: bool
     created_at: datetime
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
