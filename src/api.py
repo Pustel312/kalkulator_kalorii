@@ -3,6 +3,8 @@ from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate
 from src.math_core import calculate_calories, calculate_portion, calculate_components_macro
 from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log, load_components, create_component, load_user_by_email, create_user
 from src.security import hash_password, verify_password, create_access_token
+from src.auth import get_current_user
+from src.models import User
 from sqlalchemy.orm import Session
 from datetime import date as Date
 
@@ -144,7 +146,8 @@ def get_composed_product_details(
 @app.post("/logs", tags=["Logs"], response_model=LogResponse)
 def create_log_endpoint(
     dane: LogCreate,
-    session: Session = Depends(get_db)
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
     ):
     product = load_products_by_id(session, dane.product_id)
     if not product:
@@ -153,6 +156,7 @@ def create_log_endpoint(
     data = Date.today()
     created_log = create_log(
         session=session,
+        user_id=current_user.id,
         product_id = dane.product_id,
         product_type = product.type,
         weight=dane.weight,
@@ -168,8 +172,9 @@ def create_log_endpoint(
 def get_log_by_id(
     entry_id: int,
     session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
     ):
-    log = load_log_by_id(session, entry_id)
+    log = load_log_by_id(session, entry_id, current_user.id)
     if not log:
         raise HTTPException(status_code=404, detail="Log not found")
     return log 
@@ -177,18 +182,19 @@ def get_log_by_id(
 @app.get("/logs", response_model=list[LogResponse], tags=["Logs"])
 def get_logs_by_date(
     target_date: Date,
-    session: Session = Depends(get_db)
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
     ):
-    logs = load_log_by_date(target_date, session)
+    logs = load_log_by_date(target_date, session, current_user.id)
     return logs
 
 @app.delete("/logs/{entry_id}", tags=["Logs"])
 def delete_logs_endpoint(
     entry_id: int,
-    session: Session = Depends(get_db)
-
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
     ):
-    deletedL = delete_log(session, entry_id)
+    deletedL = delete_log(session, entry_id, current_user.id)
     if not deletedL:
         raise HTTPException(status_code=404, detail="Log not found")
     return {"status": "ok", "message": "Log is deleted"}    
@@ -198,19 +204,26 @@ def delete_logs_endpoint(
 @app.get("/reports/daily-summary", response_model=DailyReport, tags=["Reports"])
 def sum_day_endpoint(
     target_date: Date,
-    session: Session = Depends(get_db)
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
     ):
-    raport = sum_day(target_date, session)
+    raport = sum_day(target_date, session, current_user.id)
     return raport 
 
 @app.get("/report/top", response_model=list[Top3Report], tags=["Reports"])
-def report_top_eaten_products_endpoint(session: Session = Depends(get_db)):
-    report = report_top_eaten_products(session)
+def report_top_eaten_products_endpoint(
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+    ):
+    report = report_top_eaten_products(session, current_user.id)
     return report
 
 @app.get("/report/avg", response_model=list[AvgWeightReport], tags=["Reports"])
-def report_average_weight_of_log_endpoint(session: Session = Depends(get_db)):
-    report = report_average_weight_of_log(session)
+def report_average_weight_of_log_endpoint(
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+    ):
+    report = report_average_weight_of_log(session, current_user.id)
     return report
 
 # # # # # # # # # # # # # # # # # # # # # # # # USERS # # # # # # # # # # # # # # # # # # # # # # # #
@@ -260,3 +273,9 @@ def user_login_endpoint(
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+@app.get("/users/me", tags=["Users"], response_model=UserResponse)
+def get_current_user_endpoint(
+    current_user: User = Depends(get_current_user)
+    ):
+    return current_user

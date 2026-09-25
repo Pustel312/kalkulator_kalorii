@@ -60,6 +60,7 @@ class Log(Base):
     __tablename__="logs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
     product_type: Mapped[ProductType] = mapped_column(SqlEnum(ProductType, name="product_type"))
     weight: Mapped[float]
@@ -68,6 +69,8 @@ class Log(Base):
     carbs: Mapped[float]
     calories: Mapped[float]
     date: Mapped[Date] = mapped_column(index=True)
+
+    user: Mapped["User"] = relationship(back_populates="logs")
     product: Mapped["Product"] = relationship(back_populates="logs")
     #L from Logs for args
     __table_args__ = (
@@ -85,3 +88,5 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(nullable=False)
     active: Mapped[bool] = mapped_column(default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc)) #zwraca jako date aktualny moment w ktorym utworzone zostalo konto
+
+    logs: Mapped[list["Log"]] = relationship(back_populates="user")

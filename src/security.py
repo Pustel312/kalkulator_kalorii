@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
+TOKEN_EXPIRE_TIME = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
 def hash_password(password: str) -> str:
     password_hash = PasswordHash.recommended()
@@ -21,7 +22,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(user_id: int) -> str:
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=TOKEN_EXPIRE_TIME)
     payload = {
         "sub": str(user_id),
         "exp": expires_at
@@ -33,3 +34,11 @@ def create_access_token(user_id: int) -> str:
         ALGORITHM
     )
     return token
+
+def decode_access_token(token: str):
+    payload = jwt.decode(
+        token,
+        SECRET_KEY,
+        algorithms=[ALGORITHM]
+    )
+    return payload

@@ -121,17 +121,19 @@ def create_component(
 # # # # # # # # # # # # # # # # # # # # # # # # LOGS # # # # # # # # # # # # # # # # # # # # # # # #
 
 def create_log(
-        session: Session,
-        product_id: int,
-        product_type: ProductType,
-        weight: float,
-        protein: float,
-        fat: float,
-        carbs: float,
-        calories: float,
-        date: Date
+    session: Session,
+    user_id: int,
+    product_id: int,
+    product_type: ProductType,
+    weight: float,
+    protein: float,
+    fat: float,
+    carbs: float,
+    calories: float,
+    date: Date
     ):
     log = Log(
+        user_id=user_id,
         product_id=product_id,
         product_type=product_type,
         weight=weight,
@@ -140,28 +142,41 @@ def create_log(
         carbs=carbs,
         calories=calories,
         date=date
-    )
+        )
     session.add(log)
     session.commit()
     session.refresh(log)
     return log
 
-def load_log_by_id(session: Session, log_id: int):
-    log = session.get(Log, log_id)
+def load_log_by_id(
+    session: Session,
+    log_id: int,
+    user_id: int
+    ):
+    stmt = select(Log).where(Log.id == log_id, Log.user_id == user_id)
+    result = session.execute(stmt)
+    log = result.scalar_one_or_none()
     return log
     
 
 def load_log_by_date(
-        date: Date,
-        session: Session
+    date: Date,
+    session: Session,
+    user_id: int   
     ):
-    smtm = select(Log).where(Log.date == date)
+    smtm = select(Log).where(Log.date == date, Log.user_id == user_id)
     result = session.execute(smtm)
     logs = result.scalars().all()
     return logs
     
-def delete_log(session: Session, log_id: int):
-    log = session.get(Log, log_id)
+def delete_log(
+    session: Session,
+    log_id: int,
+    user_id: int
+    ):
+    stmt = select(Log).where(Log.id == log_id, Log.user_id == user_id)
+    result = session.execute(stmt)
+    log = result.scalar_one_or_none()
     if not log:
         return False
     session.delete(log)
@@ -172,7 +187,8 @@ def delete_log(session: Session, log_id: int):
 
 def sum_day(
         target_date: Date,
-        session: Session
+        session: Session,
+        user_id: int
     ):
     result = select(
         func.coalesce(func.sum(Log.calories), 0),
@@ -180,7 +196,7 @@ def sum_day(
         func.coalesce(func.sum(Log.fat), 0),
         func.coalesce(func.sum(Log.carbs), 0),
         func.count(Log.id)
-    ).where(Log.date == target_date)
+    ).where(Log.date == target_date, Log.user_id == user_id)
     calories, protein, fat, carbs, log_count = session.execute(result).one()
     return {
         "calories": calories,
@@ -190,12 +206,13 @@ def sum_day(
         "log_count": log_count
     }
 
-def report_top_eaten_products(session: Session):
+def report_top_eaten_products(session: Session, user_id: int):
     stmt = select(
         Product.name,
         func.count(Log.product_id).label("liczba_logow"),
         func.sum(Log.weight).label("suma_wagi")
-    ).join(Product, Log.product_id == Product.id).group_by(Product.name).order_by(func.count(Log.product_id).desc()).limit(3)
+    ).join(Product, Log.product_id == Product.id).where(Log.user_id == user_id).group_by(Product.name).order_by(func.count(Log.product_id).desc()).limit(3)
+    
 
     result = session.execute(stmt)
     rows = result.all()
@@ -210,12 +227,12 @@ def report_top_eaten_products(session: Session):
         )
     return report
 
-def report_average_weight_of_log(session: Session):
+def report_average_weight_of_log(session: Session, user_id: int):
     stmt = select(
         Product.name,
         func.count(Log.id).label("liczba_logow"),
         func.avg(Log.weight).label("srednia_waga")
-    ).join(Product, Log.product_id == Product.id).group_by(Product.name).having(func.count(Log.id) >= 2).order_by(func.avg(Log.weight).desc())
+    ).join(Product, Log.product_id == Product.id).where(Log.user_id == user_id).group_by(Product.name).having(func.count(Log.id) >= 2).order_by(func.avg(Log.weight).desc())
     result = session.execute(stmt)
     rows = result.all()
     report = []
@@ -247,4 +264,10 @@ def create_user(session: Session,
     session.add(user)
     session.commit()
     session.refresh(user)
+    return user
+
+def load_user_by_id(session: Session, user_id: int):
+    stmt = select(User).where(User.id == user_id)
+    result = session.execute(stmt)
+    user = result.scalar_one_or_none()
     return user
