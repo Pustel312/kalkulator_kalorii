@@ -211,7 +211,7 @@ def report_top_eaten_products(session: Session, user_id: int):
         Product.name,
         func.count(Log.product_id).label("liczba_logow"),
         func.sum(Log.weight).label("suma_wagi")
-    ).join(Product, Log.product_id == Product.id).where(Log.user_id == user_id).group_by(Product.name).order_by(func.count(Log.product_id).desc()).limit(3)
+    ).join(Product, Log.product_id == Product.id).where(Log.user_id == user_id).group_by(Product.id, Product.name).order_by(func.count(Log.product_id).desc(), Product.id.asc()).limit(3)
     
 
     result = session.execute(stmt)

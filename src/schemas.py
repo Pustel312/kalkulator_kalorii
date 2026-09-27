@@ -20,8 +20,8 @@ class ProductResponse(ProductCreate):
         from_attributes = True
 
 class ProductUpdate(BaseModel):
-    name: str | None = Field(..., min_length=1, description="Nazwa produktu")
-    type: ProductType = Field(..., description="Typ produktu")
+    name: str | None = Field(default= None, min_length=1, description="Nazwa produktu")
+    type: ProductType | None = None
     protein: float | None = Field(default=None, ge=0)
     fat: float | None = Field(default=None, ge=0)
     carbs: float | None = Field(default=None, ge=0)
