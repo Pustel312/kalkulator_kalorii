@@ -2,7 +2,7 @@ from src.models import Product, Log, Base, ProductComponent, User
 from src.schemas import ProductUpdate, Top3Report, AvgWeightReport
 from src.enums import ProductType
 from src.math_core import calculate_calories
-from sqlalchemy import create_engine, select, func
+from sqlalchemy import create_engine, select, func, or_
 from sqlalchemy.orm import Session
 import os
 from dotenv import load_dotenv
@@ -24,19 +24,21 @@ def get_db():
 def create_product(
         session: Session,
         name: str,
+        owner_id: int,
         product_type: ProductType,
         protein: float,
         fat: float,
         carbs: float,
         calories: float,
 ):
-    stmt = select(Product).where(Product.active.is_(True), Product.name == name)
+    stmt = select(Product).where(Product.active.is_(True), Product.name == name, Product.owner_id == owner_id)
     result = session.execute(stmt)
     existing_product = result.scalar_one_or_none()
     if existing_product:
         return None
     product = Product(
         name=name,
+        owner_id=owner_id,
         type=product_type,
         protein=protein,
         fat=fat,
@@ -49,30 +51,43 @@ def create_product(
     session.refresh(product)
     return product
 
-def load_products(session: Session):
-    stmt = select(Product).where(Product.active.is_(True))
+def load_products(session: Session, owner_id: int):
+    stmt = select(Product).where(Product.active.is_(True), or_(Product.owner_id == owner_id, Product.is_global.is_(True)))
     result = session.execute(stmt)
     products = result.scalars().all()
     return products
 
 
-def load_products_by_id(session: Session, product_id: int):
-    stmt = select(Product).where(Product.id == product_id, Product.active.is_(True))
+def load_products_by_id(session: Session, product_id: int, owner_id: int):
+    stmt = select(Product).where(Product.id == product_id, Product.active.is_(True), or_(Product.owner_id == owner_id, Product.is_global.is_(True)))
+    result = session.execute(stmt)
+    product = result.scalar_one_or_none()
+    return product
+
+def load_private_products_by_id(session: Session, product_id: int, owner_id: int):
+    stmt = select(Product).where(Product.id == product_id, Product.active.is_(True), Product.owner_id == owner_id, Product.is_global.is_(False))
+    result = session.execute(stmt)
+    product = result.scalar_one_or_none()
+    return product
+
+def load_owned_product_by_id(session: Session, product_id: int, owner_id: int):
+    stmt = select(Product).where(Product.id == product_id, Product.active.is_(True), Product.owner_id == owner_id)
     result = session.execute(stmt)
     product = result.scalar_one_or_none()
     return product
 
 def search_products(
         phrase: str,
-        session: Session
+        session: Session,
+        owner_id: int
 ):
-    stmt = select(Product).where(Product.name.contains(phrase)).where(Product.active.is_(True))
+    stmt = select(Product).where(Product.name.contains(phrase)).where(Product.active.is_(True), or_(Product.owner_id == owner_id, Product.is_global.is_(True)))
     result = session.execute(stmt)
     search_result = result.scalars().all()
     return search_result
 
-def update_product(session: Session, product_id: int, product_update: ProductUpdate):
-    product = load_products_by_id(session, product_id)
+def update_product(session: Session, product_id: int, product_update: ProductUpdate, owner_id: int):
+    product = load_private_products_by_id(session, product_id, owner_id)
     if not product:
         return False
     update_data = product_update.model_dump(exclude_unset=True)
@@ -87,14 +102,24 @@ def update_product(session: Session, product_id: int, product_update: ProductUpd
     session.commit()
     return product
 
-def delete_product(session: Session, product_id: int):
-    product = load_products_by_id(session, product_id)
+def delete_product(session: Session, product_id: int, owner_id: int):
+    product = load_private_products_by_id(session, product_id, owner_id)
     if not product:
         return False
     product.active = False
     session.commit()
 
     return True
+
+def change_product_visibility(session: Session, product_id: int, owner_id: int, is_global: bool):
+    product = load_owned_product_by_id(session, product_id, owner_id)
+    if not product:
+        return False
+    product.is_global = is_global
+    session.commit()
+    session.refresh(product)
+
+    return product
 # # # # # # # # # # # # # # # # # # # # # # # # COMPONENTS # # # # # # # # # # # # # # # # # # # # # # # #
 def load_components(session: Session, product_ids: list[int]):
     stmt = select(Product).where(Product.id.in_(product_ids))

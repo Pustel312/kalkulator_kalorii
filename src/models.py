@@ -9,6 +9,7 @@ class Product(Base):
     __tablename__="products"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     name: Mapped[str]
     type: Mapped[ProductType] = mapped_column(SqlEnum(ProductType, name="product_type"))
     protein: Mapped[float]
@@ -16,9 +17,11 @@ class Product(Base):
     carbs: Mapped[float]
     calories: Mapped[float]
     active: Mapped[bool]
+    is_global: Mapped[bool] = mapped_column(default=False, nullable=False)
     description: Mapped[str | None] = mapped_column(nullable=True)
     
     logs: Mapped[list["Log"]] = relationship(back_populates="product")
+    user: Mapped["User"] = relationship(back_populates="products")
     components: Mapped[list["ProductComponent"]] = relationship(
         back_populates="parent_product", 
         foreign_keys="ProductComponent.parent_product_id"
@@ -27,6 +30,7 @@ class Product(Base):
         back_populates="component_product",
         foreign_keys="ProductComponent.component_product_id"
         )
+        
     #P from Products for args
     __table_args__ = (
         CheckConstraint("protein >= 0", name="Pprotein_nonnegative"),
@@ -35,9 +39,16 @@ class Product(Base):
         CheckConstraint("calories >= 0", name="Pcalories_nonnegative"),
         Index(
             "uq_active_product_name",
+            "owner_id",
             "name",
             unique=True,
             postgresql_where=text("active IS TRUE")
+        ),
+        Index(
+            "uq_active_global_product_name",
+            "name",
+            unique=True,
+            postgresql_where=text("active IS TRUE AND is_global IS TRUE")
         )
     )
 
@@ -89,4 +100,6 @@ class User(Base):
     active: Mapped[bool] = mapped_column(default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc)) #zwraca jako date aktualny moment w ktorym utworzone zostalo konto
 
+    products: Mapped[list["Product"]] = relationship(back_populates="user")
     logs: Mapped[list["Log"]] = relationship(back_populates="user")
+    

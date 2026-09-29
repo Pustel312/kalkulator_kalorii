@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport, ProductCreateComposed, ProductComponentResult, UserCreate, UserResponse, UserLogin
 from src.math_core import calculate_calories, calculate_portion, calculate_components_macro
-from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log, load_components, create_component, load_user_by_email, create_user
+from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log, load_components, create_component, load_user_by_email, create_user, change_product_visibility
 from src.security import hash_password, verify_password, create_access_token
 from src.auth import get_current_user
 from src.models import User
@@ -26,7 +26,8 @@ def healthcheck():
 @app.post("/products", tags=["Products"], response_model=ProductResponse)
 def create_product_endpoint(
         product: ProductCreate,
-        session: Session = Depends(get_db)
+        session: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
     ):
     calculated_calories = calculate_calories(
         protein = product.protein,
@@ -36,6 +37,7 @@ def create_product_endpoint(
     created_product = create_product(
         session=session,
         name=product.name,
+        owner_id=current_user.id,
         product_type=product.type,
         protein=product.protein,
         fat=product.fat,
@@ -49,28 +51,34 @@ def create_product_endpoint(
         )
     return created_product
 @app.get("/products", tags=["Products"], response_model=list[ProductResponse])
-def get_products(session: Session = Depends(get_db)):
-    products = load_products(session)
+def get_products(
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+    ):
+    products = load_products(session, current_user.id)
     return products
 
 @app.get("/products/search", tags=["Products"], response_model=list[ProductResponse])
 def get_products_by_phrase(
     phrase: str,
-    session: Session = Depends(get_db)
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
     ):
-    products = search_products(phrase, session)
+    products = search_products(phrase, session, current_user.id)
     return products
 
 @app.patch("/products/{product_id}", tags=["Products"], response_model=ProductResponse)
 def update_product_endpoint(
     product_id: int,
     product_update: ProductUpdate,
-    session: Session = Depends(get_db)
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     updated_product = update_product(
         session,
         product_id,
-        product_update
+        product_update,
+        current_user.id
     )
     if not updated_product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -81,12 +89,32 @@ def update_product_endpoint(
 def delete_products(
     product_id: int,
     session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
     ):
-    deleted = delete_product(session, product_id)
+    deleted = delete_product(session, product_id, current_user.id)
 
     if not deleted:
         raise HTTPException(status_code=404, detail="Product not found")
     return {"status": "ok", "message": "Product is deleted"}
+
+@app.patch("/products/{product_id}/visibility", tags=["Products"])
+def change_is_global(
+    product_id: int,
+    is_global: bool,
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    global_or_private = change_product_visibility(
+        session=session,
+        product_id=product_id,
+        is_global=is_global,
+        owner_id=current_user.id
+    )
+
+    if not global_or_private:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return global_or_private
 # # # # # # # # # # # # # # # # # # # # # # # # COMPONENTS # # # # # # # # # # # # # # # # # # # # # # # #
 @app.post("/components/composed", tags=["Components"])
 def create_composed_product_endpoint(
@@ -121,9 +149,10 @@ def create_composed_product_endpoint(
 @app.get("/products/{product_id}/details", response_model=ProductComponentResult, tags=["Components"])
 def get_composed_product_details(
     product_id: int,
-    session: Session = Depends(get_db)
+    session: Session = Depends(get_db),
+    current_user: int = Depends(get_current_user)
     ):
-    product = load_products_by_id(session, product_id)
+    product = load_products_by_id(session, product_id, current_user.id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     components = product.components
@@ -150,7 +179,7 @@ def create_log_endpoint(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
     ):
-    product = load_products_by_id(session, dane.product_id)
+    product = load_products_by_id(session, dane.product_id, current_user.id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     portion_data = calculate_portion(product, dane.weight)
