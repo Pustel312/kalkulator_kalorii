@@ -3,8 +3,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport, ProductCreateComposed, ProductComponentResult, UserCreate, UserResponse, UserLogin
 from src.math_core import calculate_calories, calculate_portion, calculate_components_macro
 from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log, load_components, create_component, load_user_by_email, create_user, change_product_visibility
-from src.security import hash_password, verify_password, create_access_token
-from src.auth import get_current_user
+from src.security import hash_password, verify_password, create_access_token, create_refresh_token
+from src.auth import get_current_user, get_refresh_user
 from src.models import User
 from sqlalchemy.orm import Session
 from datetime import date as Date
@@ -115,20 +115,29 @@ def change_is_global(
         raise HTTPException(status_code=404, detail="Product not found")
 
     return global_or_private
+
 # # # # # # # # # # # # # # # # # # # # # # # # COMPONENTS # # # # # # # # # # # # # # # # # # # # # # # #
+
 @app.post("/components/composed", tags=["Components"])
 def create_composed_product_endpoint(
     product: ProductCreateComposed,
-    session: Session = Depends(get_db)
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
     ):
     product_ids = []
     for component in product.components:
         product_id = component.product_id
         product_ids.append(product_id)
-    product_list = load_components(session, product_ids)
+    product_list = load_components(session, product_ids, current_user.id)
+    if not product_list:
+        raise HTTPException(
+            status_code=404,
+            detail="One or more components not found"
+        )
     macros = calculate_components_macro(product_list=product_list, product=product.components)
     created_product = create_product(
         session=session,
+        owner_id=current_user.id,
         name=product.name,
         product_type=product.type,
         protein=macros["protein"],
@@ -150,7 +159,7 @@ def create_composed_product_endpoint(
 def get_composed_product_details(
     product_id: int,
     session: Session = Depends(get_db),
-    current_user: int = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
     ):
     product = load_products_by_id(session, product_id, current_user.id)
     if not product:
@@ -298,9 +307,11 @@ def user_login_endpoint(
                     status_code=401,
                     detail="Invalid email or password"
                 )
-    access_token = create_access_token(check_user.id)
+    access = create_access_token(check_user.id)
+    refresh = create_refresh_token(check_user.id)
     return {
-        "access_token": access_token,
+        "access_token": access,
+        "refresh_token": refresh,
         "token_type": "bearer"
     }
 
@@ -310,8 +321,8 @@ def get_current_user_endpoint(
     ):
     return current_user
 
-@app.post("/users/token", tags=["Users"])
-def token_endpoint(
+@app.post("/users/token/access", tags=["Users"])
+def access_token_endpoint(
         form_data: OAuth2PasswordRequestForm = Depends(),
         session: Session = Depends(get_db)
     ):
@@ -335,3 +346,14 @@ def token_endpoint(
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+@app.post("/users/token/refresh", tags=["Users"])
+def refresh_token_endpoint(
+        refresh_user: User = Depends(get_refresh_user),
+    ):
+    access_token = create_access_token(refresh_user.id)
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
+    

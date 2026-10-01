@@ -115,16 +115,30 @@ def change_product_visibility(session: Session, product_id: int, owner_id: int, 
     product = load_owned_product_by_id(session, product_id, owner_id)
     if not product:
         return False
+    if is_global == True:
+        for component in product.components:
+            if not component.component_product.is_global:
+                return False
     product.is_global = is_global
     session.commit()
     session.refresh(product)
 
     return product
 # # # # # # # # # # # # # # # # # # # # # # # # COMPONENTS # # # # # # # # # # # # # # # # # # # # # # # #
-def load_components(session: Session, product_ids: list[int]):
-    stmt = select(Product).where(Product.id.in_(product_ids))
+def load_components(session: Session, product_ids: list[int], owner_id: int):
+    stmt = select(Product).where(
+        Product.id.in_(product_ids),
+        Product.active.is_(True),
+        or_(
+            Product.owner_id == owner_id,
+            Product.is_global.is_(True)
+            )
+        )
     result = session.execute(stmt)
     component = result.scalars().all()
+    loaded_ids = [product.id for product in component]
+    if set(product_ids) != set(loaded_ids):
+        return False
     return component
 
 def create_component(

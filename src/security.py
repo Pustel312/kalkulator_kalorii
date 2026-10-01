@@ -6,7 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
-TOKEN_EXPIRE_TIME = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+ACCESS_TOKEN_EXPIRE_TIME = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+REFRESH_TOKEN_EXPIRE_TIME = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
 
 def hash_password(password: str) -> str:
     password_hash = PasswordHash.recommended()
@@ -21,10 +22,11 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(user_id: int) -> str:
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=TOKEN_EXPIRE_TIME)
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_TIME)
     payload = {
         "sub": str(user_id),
-        "exp": expires_at
+        "exp": expires_at,
+        "token_type": "access"
     }
 
     token = jwt.encode(
@@ -34,7 +36,22 @@ def create_access_token(user_id: int) -> str:
     )
     return token
 
-def decode_access_token(token: str):
+def create_refresh_token(user_id: int) -> str:
+    expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_TIME)
+    payload = {
+        "sub": str(user_id),
+        "exp": expires_at,
+        "token_type": "refresh"
+    }
+
+    token = jwt.encode(
+        payload,
+        SECRET_KEY,
+        ALGORITHM
+    )
+    return token
+
+def decode_token(token: str):
     try:
         payload = jwt.decode(
             token,
