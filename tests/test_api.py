@@ -36,10 +36,11 @@ def override_get_db():
 
 app.dependency_overrides[get_db] = override_get_db
 
-def create_test_product(name, protein, fat, carbs, product_type=ProductType.product
+def create_test_product(name, protein, fat, carbs, headers, product_type=ProductType.product
     ):
     response = client.post(
         "/products",
+        headers=headers,
         json={
             "name": name,
             "type": product_type,
@@ -113,6 +114,7 @@ def test_healthcheck():
 def test_create_product(clean_db):
     response = client.post(
         "/products",
+        headers=create_test_authorization(),
         json={
             "name": "Ryż",
             "protein": 7,
@@ -126,20 +128,23 @@ def test_create_product(clean_db):
 
 
 def test_create_product_multiple(clean_db):
-    create_test_product("Ryż", 7, 1, 78)
-    create_test_product("Makaron", 10, 3, 50)
+    headers=create_test_authorization()
+    create_test_product("Ryż", 7, 1, 78, headers)
+    create_test_product("Makaron", 10, 3, 50, headers)
 
-    response1 = client.get("/products")
+    response1 = client.get("/products", headers=headers)
 
     assert response1.status_code == 200
     assert len(response1.json()) == 2
 
 def test_product_search(clean_db):
-    create_test_product("Ryż", 7, 1, 78)
-    create_test_product("Kurczak", 20, 6, 25)
+    headers=create_test_authorization()
+    create_test_product("Ryż", 7, 1, 78, headers)
+    create_test_product("Kurczak", 20, 6, 25, headers)
 
     response1 = client.get(
         "/products/search",
+        headers=headers,
         params={
             "phrase": "Ry"
             }
@@ -152,11 +157,13 @@ def test_product_search(clean_db):
     assert data[0]["name"] == "Ryż"
 
 def test_delete_product(clean_db):
-    create_response1 = create_test_product("Ryż", 7, 1, 78)
+    headers=create_test_authorization()
+    create_response1 = create_test_product("Ryż", 7, 1, 78, headers)
     product_id = create_response1.json()["id"]
     
     response1 = client.delete(
-        f"/products/{product_id}"
+        f"/products/{product_id}",
+        headers=headers
     )
 
     assert response1.status_code == 200
@@ -165,8 +172,10 @@ def test_delete_product(clean_db):
     }
 
 def test_delete_product_not_found(clean_db):
+    headers=create_test_authorization()
     response = client.delete(
-        "/products/100"
+        "/products/100",
+        headers=headers
     )
 
     assert response.status_code == 404
@@ -175,32 +184,35 @@ def test_delete_product_not_found(clean_db):
     }
 
 def test_soft_delete_product(clean_db):
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    headers=create_test_authorization()
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers)
     product_id = create_response_product1.json()["id"]
-    response_delete1 = client.delete(f"/products/{product_id}")
-    headers = create_test_authorization()
+    response_delete1 = client.delete(f"/products/{product_id}", headers=headers)
     create_response_log1 = create_test_log(product_id, 200, headers)
 
     assert response_delete1.status_code == 200
     assert create_response_log1.status_code == 404
 
 def test_soft_delete_product_same_name(clean_db):
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    headers=create_test_authorization()
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers)
     product_id1 = create_response_product1.json()["id"]
-    create_response_product2 = create_test_product("Ryż", 7, 1, 78)
+    create_response_product2 = create_test_product("Ryż", 7, 1, 78, headers)
 
     assert create_response_product2.status_code == 409
 
-    client.delete(f"/products/{product_id1}")
-    create_response_product3 = create_test_product("Ryż", 7, 1, 78)
+    client.delete(f"/products/{product_id1}", headers=headers)
+    create_response_product3 = create_test_product("Ryż", 7, 1, 78, headers)
 
     assert create_response_product3.status_code == 200
 
 def test_update(clean_db):
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    headers=create_test_authorization()
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers)
     product_id = create_response_product1.json()["id"]
     response_update1 = client.patch(
         f"/products/{product_id}",
+        headers=headers,
         json={
             "protein": 12
         }
@@ -212,10 +224,12 @@ def test_update(clean_db):
     assert data["protein"] == 12
 
 def test_update_nonnegative(clean_db):
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    headers=create_test_authorization()
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers)
     product_id = create_response_product1.json()["id"]
     response_update1 = client.patch(
         f"/products/{product_id}",
+        headers=headers,
         json={
             "protein": -12
         }
@@ -224,8 +238,10 @@ def test_update_nonnegative(clean_db):
     assert response_update1.status_code == 422
 
 def test_update_nonexisting(clean_db):
+    headers=create_test_authorization()
     response_update = client.patch(
         f"/products/1",
+        headers=headers,
         json={
             "protein": 12
         }
@@ -235,17 +251,17 @@ def test_update_nonexisting(clean_db):
 # # # # # # # # # # # # # # # # # # # # # # # # LOGS TESTS # # # # # # # # # # # # # # # # # # # # # # # #
 
 def test_create_log(clean_db):
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    headers=create_test_authorization()
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers)
     product_id = create_response_product1.json()["id"]
-    headers = create_test_authorization()
     create_response_log1 = create_test_log(product_id, 200, headers)
 
     assert create_response_log1.status_code == 200
 
 def test_get_log(clean_db):
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    headers=create_test_authorization()
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers)
     product_id = create_response_product1.json()["id"]
-    headers = create_test_authorization()
     create_response_log1 = create_test_log(product_id, 200, headers)
     log_id = create_response_log1.json()["id"]
 
@@ -262,9 +278,9 @@ def test_get_log(clean_db):
     assert data["calories"] == 698
 
 def test_get_log_target_date(clean_db):
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    headers=create_test_authorization()
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers)
     product_id = create_response_product1.json()["id"]
-    headers = create_test_authorization()
     create_response_log1 = create_test_log(product_id, 200, headers)
     target_date = create_response_log1.json()["date"]
 
@@ -282,9 +298,9 @@ def test_get_log_target_date(clean_db):
     assert data[0]["date"] == target_date
 
 def test_delete_log(clean_db):
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    headers=create_test_authorization()
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers)
     product_id = create_response_product1.json()["id"]
-    headers = create_test_authorization()
     create_response_log1 = create_test_log(product_id, 200, headers)
     log_id = create_response_log1.json()["id"]
     delete_response_log = client.delete(
@@ -306,9 +322,9 @@ def test_delete_log_nonexisting(clean_db):
 # # # # # # # # # # # # # # # # # # # # # # # # REPORTS # # # # # # # # # # # # # # # # # # # # # # # #
 
 def test_sum_day(clean_db):
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    headers=create_test_authorization()
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers)
     product_id = create_response_product1.json()["id"]
-    headers = create_test_authorization()
     create_test_log(product_id, 100, headers)
     create_test_log(product_id, 150, headers)
 
@@ -326,15 +342,15 @@ def test_sum_day(clean_db):
     assert daily_data["protein"] == 17.5
 
 def test_top_and_average_products(clean_db):
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
-    create_response_product2 = create_test_product("Makaron", 10, 3, 50)
-    create_response_product3 = create_test_product("Ziemniaki", 4, 0, 40)
-    create_response_product4 = create_test_product("Kasza", 6, 5, 60)
+    headers=create_test_authorization()
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers)
+    create_response_product2 = create_test_product("Makaron", 10, 3, 50, headers)
+    create_response_product3 = create_test_product("Ziemniaki", 4, 0, 40, headers)
+    create_response_product4 = create_test_product("Kasza", 6, 5, 60, headers)
     product_id1 = create_response_product1.json()["id"]
     product_id2 = create_response_product2.json()["id"]
     product_id3 = create_response_product3.json()["id"]
     product_id4 = create_response_product4.json()["id"]
-    headers = create_test_authorization()
 
     create_test_log(product_id1, 154, headers)
     create_test_log(product_id1, 254, headers)
@@ -429,6 +445,104 @@ def test_current_user_without_token(clean_db):
     assert response.status_code == 401
 
 # # # # # # # # # # # # # # # # # # # # # # # # OWNERSHIP # # # # # # # # # # # # # # # # # # # # # # # #
+def test_login(
+    clean_db,
+    email="test@example.com",
+    password="TestPassword123"
+    ):
+    create_test_user(email, password)
+    login_response = login_test_user(email, password)
+    bearer = login_response.json()["token_type"]
+    access_token = login_response.json()["access_token"]
+    refresh_token = login_response.json()["refresh_token"]
+
+    assert login_response.status_code == 200
+    assert bearer == "bearer"
+    assert access_token
+    assert refresh_token
+
+def test_refresh_token(clean_db,
+    email="test@example.com",
+    password="TestPassword123"
+    ):
+    create_test_user(email, password)
+    login_response = login_test_user(email, password)
+    refresh_token = login_response.json()["refresh_token"]
+    refresh_headers = {
+        "Authorization": f"Bearer {refresh_token}"
+    }
+    refresh_check = client.post("/users/token/refresh", headers=refresh_headers)
+
+    access_token = refresh_check.json()["access_token"]
+    token_type = refresh_check.json()["token_type"]
+
+    assert refresh_check.status_code == 200
+    assert access_token
+    assert token_type == "bearer"
+
+def test_access_token_as_refresh_token(clean_db,
+    email="test@example.com",
+    password="TestPassword123"
+    ):
+    create_test_user(email, password)
+    login_response = login_test_user(email, password)
+    refresh_token = login_response.json()["access_token"]
+    access_headers = {
+        "Authorization": f"Bearer {refresh_token}"
+    }
+    refresh_check = client.post("/users/token/refresh", headers=access_headers)
+
+    assert refresh_check.status_code == 401
+    assert refresh_check.json() == {
+        "detail": "Invalid token type"
+        }
+def test_refresh_token_as_access_token(clean_db,
+    email="test@example.com",
+    password="TestPassword123"
+    ):
+    create_test_user(email, password)
+    login_response = login_test_user(email, password)
+    access_token = login_response.json()["refresh_token"]
+    access_headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+    response = client.post(
+            "/products",
+            headers=access_headers,
+            json={
+                "name": "Ryż",
+                "protein": 7,
+                "fat": 1,
+                "carbs": 78,
+                "type": "product"
+            }
+        )
+    
+    assert response.status_code == 401
+    assert response.json() == {
+        "detail": "Invalid token type"
+        }
+
+def test_invalid_token(clean_db):
+    response = client.post(
+            "/products",
+            headers={
+                "Authorization": "Bearer 123"
+            },
+            json={
+                "name": "Ryż",
+                "protein": 7,
+                "fat": 1,
+                "carbs": 78,
+                "type": "product"
+            }
+        )
+    
+    assert response.status_code == 401
+    assert response.json() == {
+        "detail": "Invalid or expired token"
+    }
+
 def test_log_ownership(clean_db):
     headers1 = create_test_authorization(
         "test1@example.com",
@@ -439,8 +553,13 @@ def test_log_ownership(clean_db):
         "TestPassword321"
     )
 
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
     product_id1 = create_response_product1.json()["id"]
+    change_to_global = client.patch(f"/products/{product_id1}/visibility",
+        headers=headers1,
+        params={
+            "is_global": True
+        })
 
     create_response_log1 = create_test_log(product_id1, 154, headers1)
     log_id = create_response_log1.json()["id"]
@@ -454,6 +573,7 @@ def test_log_ownership(clean_db):
         headers=headers2
     )
 
+    assert change_to_global.status_code == 200
     assert get_response_log1.status_code == 200
     assert get_response_log2.status_code == 404
 
@@ -467,8 +587,13 @@ def test_log_ownership_delete_log(clean_db):
         "TestPassword321"
     )
 
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
     product_id1 = create_response_product1.json()["id"]
+    change_to_global = client.patch(f"/products/{product_id1}/visibility",
+        headers=headers1,
+        params={
+            "is_global": True
+        })
 
     create_response_log1 = create_test_log(product_id1, 154, headers1)
     log_id = create_response_log1.json()["id"]
@@ -482,7 +607,8 @@ def test_log_ownership_delete_log(clean_db):
             f"/logs/{log_id}",
             headers=headers1
         )
-
+    
+    assert change_to_global.status_code == 200
     assert delete_response_log1.status_code == 404
     assert get_response_log1.status_code == 200
 
@@ -496,8 +622,13 @@ def test_log_ownership_log_target_date(clean_db):
         "TestPassword321"
     )
 
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
     product_id1 = create_response_product1.json()["id"]
+    change_to_global = client.patch(f"/products/{product_id1}/visibility",
+        headers=headers1,
+        params={
+            "is_global": True
+        })
 
     create_response_log1 = create_test_log(product_id1, 162, headers1)
     create_test_log(product_id1, 635, headers1)
@@ -522,7 +653,8 @@ def test_log_ownership_log_target_date(clean_db):
     
     data1 = get_response_log1.json()
     data2 = get_response_log2.json()
-    
+
+    assert change_to_global.status_code == 200
     assert get_response_log1.status_code == 200
     assert get_response_log2.status_code == 200
 
@@ -541,8 +673,13 @@ def test_reports_ownership_daily_sum(clean_db):
         "TestPassword321"
     )
 
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
     product_id1 = create_response_product1.json()["id"]
+    change_to_global = client.patch(f"/products/{product_id1}/visibility",
+        headers=headers1,
+        params={
+            "is_global": True
+        })
 
     create_test_log(product_id1, 162, headers1)
     create_test_log(product_id1, 635, headers1)
@@ -563,6 +700,7 @@ def test_reports_ownership_daily_sum(clean_db):
     daily_data1 = create_response_daily1.json()
     daily_data2 = create_response_daily2.json()
 
+    assert change_to_global.status_code == 200
     assert create_response_daily1.status_code == 200
     assert create_response_daily2.status_code == 200
 
@@ -572,14 +710,6 @@ def test_reports_ownership_daily_sum(clean_db):
     assert daily_data2["calories"] == 3936.72
 
 def test_reports_ownership_top_and_avg(clean_db):
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78)
-    create_response_product2 = create_test_product("Makaron", 10, 3, 50)
-    create_response_product3 = create_test_product("Ziemniaki", 4, 0, 40)
-    create_response_product4 = create_test_product("Kasza", 6, 5, 60)
-    product_id1 = create_response_product1.json()["id"]
-    product_id2 = create_response_product2.json()["id"]
-    product_id3 = create_response_product3.json()["id"]
-    product_id4 = create_response_product4.json()["id"]
     headers1 = create_test_authorization(
         "test1@example.com",
         "TestPassword123"
@@ -588,6 +718,34 @@ def test_reports_ownership_top_and_avg(clean_db):
         "test2@example.com",
         "TestPassword321"
     )
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
+    create_response_product2 = create_test_product("Makaron", 10, 3, 50, headers1)
+    create_response_product3 = create_test_product("Ziemniaki", 4, 0, 40, headers1)
+    create_response_product4 = create_test_product("Kasza", 6, 5, 60, headers1)
+    product_id1 = create_response_product1.json()["id"]
+    product_id2 = create_response_product2.json()["id"]
+    product_id3 = create_response_product3.json()["id"]
+    product_id4 = create_response_product4.json()["id"]
+    change_to_global1 = client.patch(f"/products/{product_id1}/visibility",
+        headers=headers1,
+        params={
+            "is_global": True
+        })
+    change_to_global2 = client.patch(f"/products/{product_id2}/visibility",
+        headers=headers1,
+        params={
+            "is_global": True
+        })
+    change_to_global3 = client.patch(f"/products/{product_id3}/visibility",
+        headers=headers1,
+        params={
+            "is_global": True
+        })
+    change_to_global4 = client.patch(f"/products/{product_id4}/visibility",
+        headers=headers1,
+        params={
+            "is_global": True
+        })
     create_test_log(product_id1, 154, headers1)
     create_test_log(product_id1, 254, headers1)
     create_test_log(product_id1, 436, headers1)
@@ -613,7 +771,13 @@ def test_reports_ownership_top_and_avg(clean_db):
     data_avg1 = avg_response1.json()
     data_top2 = top_response2.json()
     data_avg2 = avg_response2.json()
-    
+
+
+    assert change_to_global1.status_code == 200
+    assert change_to_global2.status_code == 200
+    assert change_to_global3.status_code == 200
+    assert change_to_global4.status_code == 200
+
 # TEST USER 1
     assert top_response1.status_code == 200
 
