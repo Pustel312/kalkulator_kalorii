@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, EmailStr
 from datetime import date as Date, datetime
-from src.enums import ProductType
+from src.enums import ProductType, UserProfileGoal, UserProfileActivityLevel, UserProfileSex
+from decimal import Decimal
 # # # # # # # # # # # # # # # # # # # # # # # # PRODUCTS # # # # # # # # # # # # # # # # # # # # # # # #
 
 
@@ -96,3 +97,13 @@ class UserResponse(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+# # # # # # # # # # # # # # # # # # # # # # # # USERPROFILES # # # # # # # # # # # # # # # # # # # # # # # #
+
+class UserProfileCreate(BaseModel):
+    sex: UserProfileSex
+    height: int = Field(..., ge=100, le=300)
+    weight: Decimal = Field(..., ge=30, le=400)
+    birth_date: Date
+    activity_level: UserProfileActivityLevel = Field(default=UserProfileActivityLevel.moderate)
+    goal: UserProfileGoal = Field(default=UserProfileGoal.maintenance)

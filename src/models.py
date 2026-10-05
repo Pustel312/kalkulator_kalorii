@@ -1,7 +1,8 @@
-from sqlalchemy import ForeignKey, CheckConstraint, text, Index, Enum as SqlEnum
+from sqlalchemy import ForeignKey, CheckConstraint, text, Index, Enum as SqlEnum, Numeric
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import date as Date, datetime, timezone
-from src.enums import ProductType
+from src.enums import ProductType, UserProfileActivityLevel, UserProfileGoal, UserProfileSex
+from decimal import Decimal
 class Base(DeclarativeBase):
     pass
 
@@ -94,12 +95,26 @@ class Log(Base):
 
 class User(Base):
     __tablename__="users"
+
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(nullable=False)
     active: Mapped[bool] = mapped_column(default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc)) #zwraca jako date aktualny moment w ktorym utworzone zostalo konto
 
+    userprofile: Mapped["UserProfile"] = relationship(back_populates="user", cascade="all, delete-orphan")
     products: Mapped[list["Product"]] = relationship(back_populates="user")
     logs: Mapped[list["Log"]] = relationship(back_populates="user")
-    
+
+class UserProfile(Base):
+    __tablename__="userprofiles"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    sex: Mapped[UserProfileSex] = mapped_column(SqlEnum(UserProfileSex, name="sex"))
+    height: Mapped[int] = mapped_column(nullable=False)
+    weight: Mapped[Decimal] = mapped_column(Numeric(4, 1), nullable=False)
+    birth_date: Mapped[Date]
+    activity_level: Mapped[UserProfileActivityLevel] = mapped_column(SqlEnum(UserProfileActivityLevel, name="activity_level"), default=UserProfileActivityLevel.moderate, nullable=False)
+    goal: Mapped[UserProfileGoal] = mapped_column(SqlEnum(UserProfileGoal, name="goal"), default=UserProfileGoal.maintenance, nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="userprofile")

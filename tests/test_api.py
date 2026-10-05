@@ -543,6 +543,116 @@ def test_invalid_token(clean_db):
         "detail": "Invalid or expired token"
     }
 
+def test_private_product_visible_only_to_owner(clean_db):
+    headers1 = create_test_authorization(
+        "test1@example.com",
+        "TestPassword123"
+    )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+    create_test_product("Ryż", 7, 1, 78, headers1)
+    user1_list = client.get("/products",
+        headers=headers1)
+    user2_list = client.get("/products",
+        headers=headers2)
+
+    data1 = user1_list.json()
+    data2 = user2_list.json()
+
+    assert user1_list.status_code == 200
+    assert user2_list.status_code == 200
+    assert len(data1) == 1
+    assert len(data2) == 0
+
+def test_public_product_visible_to_all(clean_db):
+    headers1 = create_test_authorization(
+        "test1@example.com",
+        "TestPassword123"
+    )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+    create_product = create_test_product("Ryż", 7, 1, 78, headers1)
+    product_id1 = create_product.json()["id"]
+    visibility_response = client.patch(f"/products/{product_id1}/visibility",
+        headers=headers1,
+        params={
+            "is_global": True
+        })
+
+    user1_list = client.get("/products",
+        headers=headers1)
+    user2_list = client.get("/products",
+        headers=headers2)
+
+    data1 = user1_list.json()
+    data2 = user2_list.json()
+
+    assert visibility_response.status_code == 200
+    assert user1_list.status_code == 200
+    assert user2_list.status_code == 200
+    assert len(data1) == 1
+    assert len(data2) == 1
+
+def test_not_own_product_patch_blocked(clean_db):
+    headers1 = create_test_authorization(
+        "test1@example.com",
+        "TestPassword123"
+    )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+    create_product = create_test_product("Ryż", 7, 1, 78, headers1)
+    product_id = create_product.json()["id"]
+    change_product = client.patch(
+        f"/products/{product_id}",
+        headers=headers2,
+        json={
+            "protein": 12
+        }
+    )
+
+    assert change_product.status_code == 404
+
+def test_not_own_product_delete_blocked(clean_db):
+    headers1 = create_test_authorization(
+        "test1@example.com",
+        "TestPassword123"
+    )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+    create_product = create_test_product("Ryż", 7, 1, 78, headers1)
+    product_id = create_product.json()["id"]
+    delete_product = client.delete(
+        f"/products/{product_id}",
+        headers=headers2)
+
+    assert delete_product.status_code == 404
+
+def test_not_own_product_change_visibility_blocked(clean_db):
+    headers1 = create_test_authorization(
+        "test1@example.com",
+        "TestPassword123"
+    )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+    create_product = create_test_product("Ryż", 7, 1, 78, headers1)
+    product_id = create_product.json()["id"]
+    visibility_response = client.patch(f"/products/{product_id}/visibility",
+        headers=headers2,
+        params={
+            "is_global": True
+        })
+
+    assert visibility_response.status_code == 404
 def test_log_ownership(clean_db):
     headers1 = create_test_authorization(
         "test1@example.com",
