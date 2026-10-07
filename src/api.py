@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport, ProductCreateComposed, ProductComponentResult, UserCreate, UserResponse, UserLogin
+from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport, ProductCreateComposed, ProductComponentResult, UserCreate, UserResponse, UserLogin, UserProfileCreate, UserProfileResponse, UserProfileUpdate
 from src.math_core import calculate_calories, calculate_portion, calculate_components_macro
-from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log, load_components, create_component, load_user_by_email, create_user, change_product_visibility
+from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log, load_components, create_component, load_user_by_email, create_user, change_product_visibility, load_userprofile_by_user_id, create_userprofile, update_userprofile
 from src.security import hash_password, verify_password, create_access_token, create_refresh_token
 from src.auth import get_current_user, get_refresh_user
 from src.models import User
@@ -356,4 +356,51 @@ def refresh_token_endpoint(
         "access_token": access_token,
         "token_type": "bearer"
     }
-    
+
+@app.post("/users/me/profile", response_model=UserProfileResponse, tags=["Users"])
+def create_userprofile_endpoint(
+    userprofile: UserProfileCreate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_db)
+    ):
+    check_userprofile = load_userprofile_by_user_id(session=session, user_id=current_user.id)
+    if check_userprofile:
+        raise HTTPException(
+            status_code=409,
+            detail="UserProfile already exist."
+        )
+    new_userprofile = create_userprofile(
+        userprofile.sex,
+        userprofile.height,
+        userprofile.weight,
+        userprofile.birth_date,
+        userprofile.activity_level,
+        userprofile.goal,
+        session=session,
+        user_id=current_user.id,
+    )
+    return new_userprofile
+
+@app.get("/users/me/profile", response_model=UserProfileResponse, tags=["Users"])
+def get_userprofile(
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+    ):
+    userprofile = load_userprofile_by_user_id(session=session, user_id=current_user.id)
+    if not userprofile:
+        raise HTTPException(
+            status_code=404,
+            detail="UserProfile not found."
+        )
+    return userprofile
+
+@app.patch("/users/me/profile", tags=["Users"])
+def update_userprofile_endpoint(
+    userprofile_update: UserProfileUpdate,    
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    ):
+    updated_userprofile = update_userprofile(session=session, user_id=current_user.id, userprofile_update=userprofile_update)
+    if not updated_userprofile:
+        raise HTTPException(status_code=404, detail="UserProfile not found")
+    return updated_userprofile

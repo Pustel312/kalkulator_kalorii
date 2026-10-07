@@ -107,3 +107,21 @@ class UserProfileCreate(BaseModel):
     birth_date: Date
     activity_level: UserProfileActivityLevel = Field(default=UserProfileActivityLevel.moderate)
     goal: UserProfileGoal = Field(default=UserProfileGoal.maintenance)
+
+class UserProfileResponse(BaseModel):
+    user_id: int
+    sex: UserProfileSex
+    height: int 
+    weight: Decimal 
+    birth_date: Date
+    activity_level: UserProfileActivityLevel 
+    goal: UserProfileGoal 
+    
+    class Config:
+        from_attributes = True
+class UserProfileUpdate(BaseModel):
+    height: int | None = Field(default= None, ge=100, le=300, description="height of person")
+    weight: Decimal | None = Field(default= None, ge=30, le=400, description="weight of person")
+    birth_date: Date | None = Field(default=None)    
+    activity_level: UserProfileActivityLevel | None = Field(default= None)
+    goal: UserProfileGoal | None = Field(default= None)

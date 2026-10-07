@@ -1,12 +1,13 @@
-from src.models import Product, Log, Base, ProductComponent, User
-from src.schemas import ProductUpdate, Top3Report, AvgWeightReport
-from src.enums import ProductType
+from src.models import Product, Log, Base, ProductComponent, User, UserProfile
+from src.schemas import ProductUpdate, Top3Report, AvgWeightReport, UserProfileUpdate
+from src.enums import ProductType, UserProfileActivityLevel, UserProfileGoal, UserProfileSex
 from src.math_core import calculate_calories
 from sqlalchemy import create_engine, select, func, or_
 from sqlalchemy.orm import Session
 import os
 from dotenv import load_dotenv
 from datetime import date as Date
+from decimal import Decimal
 
 load_dotenv()
 
@@ -310,3 +311,44 @@ def load_user_by_id(session: Session, user_id: int):
     result = session.execute(stmt)
     user = result.scalar_one_or_none()
     return user
+
+def create_userprofile(
+    sex: UserProfileSex,
+    height: int,
+    weight: Decimal,
+    birth_date: Date,
+    activity_level: UserProfileActivityLevel,
+    goal: UserProfileGoal,
+    session: Session,
+    user_id: int
+    ):
+    userprofile = UserProfile(
+        user_id=user_id,
+        sex=sex,
+        height=height,
+        weight=weight,
+        birth_date=birth_date,
+        activity_level=activity_level,
+        goal=goal
+    )
+    session.add(userprofile)
+    session.commit()
+    session.refresh(userprofile)
+    return userprofile
+
+def load_userprofile_by_user_id(session: Session, user_id: int):
+    stmt = select(UserProfile).where(UserProfile.user_id == user_id)
+    result = session.execute(stmt)
+    userprofile = result.scalar_one_or_none()
+    return userprofile
+
+def update_userprofile(session: Session, user_id: int, userprofile_update: UserProfileUpdate):
+    userprofile = load_userprofile_by_user_id(session, user_id)
+    if not userprofile:
+        return False
+    update_data = userprofile_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(userprofile, field, value)
+    session.commit()
+    session.refresh(userprofile)
+    return userprofile
