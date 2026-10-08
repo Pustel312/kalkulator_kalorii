@@ -1,5 +1,9 @@
 from src.models import Product
 from src.schemas import ProductComponentCreate
+from decimal import Decimal
+from datetime import date as Date
+from src.enums import UserProfileSex, UserProfileActivityLevel
+
 def calculate_calories(protein: float, fat: float, carbohydrates: float) -> float:
     calories = round((protein * 4) + (fat * 9) + (carbohydrates * 4), 2)
     return calories
@@ -51,3 +55,28 @@ def calculate_components_macro(
         "carbs": carbs,
         "calories": calories
     }   
+
+def calculate_bmr(sex: UserProfileSex, weight: Decimal, height: int, date_birth: Date) -> int:
+    today = Date.today()
+    age = today.year - date_birth.year
+    if (today.month, today.day) < (date_birth.month, date_birth.day):
+        age -= 1
+    if sex == UserProfileSex.male:
+        bmr = ((Decimal("10")*weight)+(Decimal("6.25")*height)-(Decimal("5")*age)+Decimal("5"))
+    elif sex == UserProfileSex.female:
+        bmr = ((Decimal("10")*weight)+(Decimal("6.25")*height)-(Decimal("5")*age)-Decimal("161"))
+    else:
+        raise ValueError("Unsupported sex value")
+    return round(bmr)
+
+def calculate_tdee(bmr: int, activity_level: UserProfileActivityLevel) -> int:
+    activity_factors = {
+        UserProfileActivityLevel.sedentary: Decimal("1.2"),
+        UserProfileActivityLevel.light: Decimal("1.375"),
+        UserProfileActivityLevel.moderate: Decimal("1.55"),
+        UserProfileActivityLevel.high: Decimal("1.725"),
+        UserProfileActivityLevel.very_high: Decimal("1.9")
+    }
+    factor = activity_factors[activity_level]
+    tdee = bmr*factor
+    return round(tdee)

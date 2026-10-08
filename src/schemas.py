@@ -125,3 +125,7 @@ class UserProfileUpdate(BaseModel):
     birth_date: Date | None = Field(default=None)    
     activity_level: UserProfileActivityLevel | None = Field(default= None)
     goal: UserProfileGoal | None = Field(default= None)
+
+class UserProfileBMRandTDEE(BaseModel):
+    bmr: int
+    tdee: int
