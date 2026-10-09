@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr
 from datetime import date as Date, datetime
-from src.enums import ProductType, UserProfileGoal, UserProfileActivityLevel, UserProfileSex
+from src.enums import ProductType, UserProfileWeightGoalRate, UserProfileActivityLevel, UserProfileSex
 from decimal import Decimal
 # # # # # # # # # # # # # # # # # # # # # # # # PRODUCTS # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -106,7 +106,7 @@ class UserProfileCreate(BaseModel):
     weight: Decimal = Field(..., ge=30, le=400)
     birth_date: Date
     activity_level: UserProfileActivityLevel = Field(default=UserProfileActivityLevel.moderate)
-    goal: UserProfileGoal = Field(default=UserProfileGoal.maintenance)
+    goal: UserProfileWeightGoalRate = Field(default=UserProfileWeightGoalRate.maintenance)
 
 class UserProfileResponse(BaseModel):
     user_id: int
@@ -115,7 +115,7 @@ class UserProfileResponse(BaseModel):
     weight: Decimal 
     birth_date: Date
     activity_level: UserProfileActivityLevel 
-    goal: UserProfileGoal 
+    goal: UserProfileWeightGoalRate 
     
     class Config:
         from_attributes = True
@@ -124,7 +124,7 @@ class UserProfileUpdate(BaseModel):
     weight: Decimal | None = Field(default= None, ge=30, le=400, description="weight of person")
     birth_date: Date | None = Field(default=None)    
     activity_level: UserProfileActivityLevel | None = Field(default= None)
-    goal: UserProfileGoal | None = Field(default= None)
+    goal: UserProfileWeightGoalRate | None = Field(default= None)
 
 class UserProfileBMRandTDEE(BaseModel):
     bmr: int

@@ -2,7 +2,7 @@ from src.models import Product
 from src.schemas import ProductComponentCreate
 from decimal import Decimal
 from datetime import date as Date
-from src.enums import UserProfileSex, UserProfileActivityLevel
+from src.enums import UserProfileSex, UserProfileActivityLevel, UserProfileWeightGoalRate
 
 def calculate_calories(protein: float, fat: float, carbohydrates: float) -> float:
     calories = round((protein * 4) + (fat * 9) + (carbohydrates * 4), 2)
@@ -80,3 +80,25 @@ def calculate_tdee(bmr: int, activity_level: UserProfileActivityLevel) -> int:
     factor = activity_factors[activity_level]
     tdee = bmr*factor
     return round(tdee)
+
+def WeightGoalRateCalc(weightgoalrate: UserProfileWeightGoalRate) -> Decimal:
+    weightgoal_factors = {
+        UserProfileWeightGoalRate.loss_0_1: Decimal("-0.1"),
+        UserProfileWeightGoalRate.loss_0_2: Decimal("-0.2"),
+        UserProfileWeightGoalRate.loss_0_3: Decimal("-0.3"),
+        UserProfileWeightGoalRate.maintenance: Decimal("0"),
+        UserProfileWeightGoalRate.gain_0_1: Decimal("0.1"),
+        UserProfileWeightGoalRate.gain_0_2: Decimal("0.2"),
+        UserProfileWeightGoalRate.gain_0_3: Decimal("0.3")
+    }
+    factor = weightgoal_factors[weightgoalrate]
+    if weightgoalrate.value.startswith("loss_") or weightgoalrate.value.startswith("gain_"):
+        weekly_change = factor*7700
+        daily_change = weekly_change/7
+        return daily_change
+    else:
+        return Decimal("0")
+
+def daily_calories(tdee: int, daily_change: Decimal):
+    target_calories = tdee+daily_change
+    return round(target_calories)

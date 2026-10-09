@@ -1,7 +1,7 @@
 from sqlalchemy import ForeignKey, CheckConstraint, text, Index, Enum as SqlEnum, Numeric
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import date as Date, datetime, timezone
-from src.enums import ProductType, UserProfileActivityLevel, UserProfileGoal, UserProfileSex
+from src.enums import ProductType, UserProfileActivityLevel, UserProfileWeightGoalRate, UserProfileSex
 from decimal import Decimal
 class Base(DeclarativeBase):
     pass
@@ -115,6 +115,6 @@ class UserProfile(Base):
     weight: Mapped[Decimal] = mapped_column(Numeric(4, 1), nullable=False)
     birth_date: Mapped[Date]
     activity_level: Mapped[UserProfileActivityLevel] = mapped_column(SqlEnum(UserProfileActivityLevel, name="activity_level"), default=UserProfileActivityLevel.moderate, nullable=False)
-    goal: Mapped[UserProfileGoal] = mapped_column(SqlEnum(UserProfileGoal, name="goal"), default=UserProfileGoal.maintenance, nullable=False)
+    goal: Mapped[UserProfileWeightGoalRate] = mapped_column(SqlEnum(UserProfileWeightGoalRate, name="goal_rate"), default=UserProfileWeightGoalRate.maintenance, nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="userprofile")

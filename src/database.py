@@ -1,6 +1,6 @@
 from src.models import Product, Log, Base, ProductComponent, User, UserProfile
 from src.schemas import ProductUpdate, Top3Report, AvgWeightReport, UserProfileUpdate
-from src.enums import ProductType, UserProfileActivityLevel, UserProfileGoal, UserProfileSex
+from src.enums import ProductType, UserProfileActivityLevel, UserProfileWeightGoalRate, UserProfileSex
 from src.math_core import calculate_calories
 from sqlalchemy import create_engine, select, func, or_
 from sqlalchemy.orm import Session
@@ -318,7 +318,7 @@ def create_userprofile(
     weight: Decimal,
     birth_date: Date,
     activity_level: UserProfileActivityLevel,
-    goal: UserProfileGoal,
+    goal: UserProfileWeightGoalRate,
     session: Session,
     user_id: int
     ):

@@ -16,7 +16,11 @@ class UserProfileActivityLevel(str, Enum):
     high = "high"
     very_high = "very_high"
 
-class UserProfileGoal(str, Enum):
-    reduction = "reduction"
+class UserProfileWeightGoalRate(str, Enum):
+    loss_0_1 = "loss_0_1"
+    loss_0_2 = "loss_0_2"
+    loss_0_3 = "loss_0_3"
     maintenance = "maintenance"
-    gain = "gain"
+    gain_0_1 = "gain_0_1"
+    gain_0_2 = "gain_0_2"
+    gain_0_3 = "gain_0_3"
