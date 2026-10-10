@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from datetime import date as Date, datetime
 from src.enums import ProductType, UserProfileWeightGoalRate, UserProfileActivityLevel, UserProfileSex
 from decimal import Decimal
@@ -17,9 +17,8 @@ class ProductResponse(ProductCreate):
     id: int
     calories: float
 
-    class Config:
-        from_attributes = True
-
+    model_config = ConfigDict(from_attributes=True)
+    
 class ProductUpdate(BaseModel):
     name: str | None = Field(default= None, min_length=1, description="Nazwa produktu")
     type: ProductType | None = None
@@ -59,9 +58,7 @@ class LogResponse(BaseModel):
     carbs: float
     calories: float
     date: Date
-    
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # # # # # # # # # # # # # # # # # # # # # # # # REPORTS # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -73,13 +70,13 @@ class DailyReport(BaseModel):
     exceeded_calories: int
     protein_min: int
     protein_max: int
-    protein_eaten: int
+    protein_eaten: float
     fat_min: int
     fat_max: int
-    fat_eaten: int
+    fat_eaten: float
     carbs_min: int
     carbs_max: int
-    carbs_eaten: int
+    carbs_eaten: float
     log_count: int
     
 
@@ -128,8 +125,7 @@ class UserProfileResponse(BaseModel):
     activity_level: UserProfileActivityLevel 
     goal: UserProfileWeightGoalRate 
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 class UserProfileUpdate(BaseModel):
     height: int | None = Field(default= None, ge=100, le=300, description="height of person")
     weight: Decimal | None = Field(default= None, ge=30, le=400, description="weight of person")
@@ -137,9 +133,7 @@ class UserProfileUpdate(BaseModel):
     activity_level: UserProfileActivityLevel | None = Field(default= None)
     goal: UserProfileWeightGoalRate | None = Field(default= None)
 
-class UserProfileBMRandTDEE(BaseModel):
-    bmr: int
-    tdee: int
+
 
 
     

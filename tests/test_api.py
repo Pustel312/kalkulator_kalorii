@@ -94,7 +94,20 @@ def create_test_authorization(
         "Authorization": f"Bearer {access_token}"
     }
 
+def create_userprofile(headers, sex, height, weight, birth_date, activity_level, goal):
 
+    response = client.post("/users/me/profile", 
+        headers=headers,
+        json={
+            "sex": sex,
+            "height": height,
+            "weight": weight,
+            "birth_date": birth_date,
+            "activity_level": activity_level,
+            "goal": goal
+        })
+
+    return response
 # # # # # # # # # # # # # # # # # # # # # # # # API TESTS # # # # # # # # # # # # # # # # # # # # # # # #
 
 client = TestClient(app)
@@ -322,24 +335,167 @@ def test_delete_log_nonexisting(clean_db):
 # # # # # # # # # # # # # # # # # # # # # # # # REPORTS # # # # # # # # # # # # # # # # # # # # # # # #
 
 def test_sum_day(clean_db):
-    headers=create_test_authorization()
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers)
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
     product_id = create_response_product1.json()["id"]
-    create_test_log(product_id, 100, headers)
-    create_test_log(product_id, 150, headers)
+    create_test_log(product_id, 100, headers1)
+    create_test_log(product_id, 150, headers1)
 
 
 
     create_response_daily = client.get(
         "/reports/daily-summary",
-        headers=headers,
+        headers=headers1,
         params={"target_date": Date.today()}   
         )
     daily_data = create_response_daily.json()
 
     assert create_response_daily.status_code == 200
     assert daily_data["log_count"] == 2
-    assert daily_data["protein"] == 17.5
+    assert daily_data["bmr"] == 1915
+    assert daily_data["tdee"] == 3303
+    assert daily_data["target_calories"] == 3303
+
+    assert daily_data["protein_eaten"] == 17.5
+    assert daily_data["fat_eaten"] == 2.5
+    assert daily_data["carbs_eaten"] == 195.0
+    assert daily_data["protein_min"] == 124
+    assert daily_data["protein_max"] == 206
+    assert daily_data["fat_min"] == 73
+    assert daily_data["fat_max"] == 110
+    assert daily_data["carbs_min"] == 372
+    assert daily_data["carbs_max"] == 495
+
+def test_sum_day_few_products(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
+    create_response_product2 = create_test_product("Makaron", 3, 5, 50, headers1)
+    product_id1 = create_response_product1.json()["id"]
+    product_id2 = create_response_product2.json()["id"]
+    create_test_log(product_id1, 100, headers1)
+    create_test_log(product_id1, 150, headers1)
+    create_test_log(product_id2, 100, headers1)
+    create_test_log(product_id2, 300, headers1)
+    create_test_log(product_id2, 200, headers1)
+
+    create_response_daily = client.get(
+        "/reports/daily-summary",
+        headers=headers1,
+        params={"target_date": Date.today()}   
+        )
+    daily_data = create_response_daily.json()
+
+    assert create_response_daily.status_code == 200
+    assert daily_data["log_count"] == 5
+    assert daily_data["protein_eaten"] == 35.5
+    assert daily_data["fat_eaten"] == 32.5
+    assert daily_data["carbs_eaten"] == 495.0
+
+def test_sum_day_exceeded_calories(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
+    product_id = create_response_product1.json()["id"]
+    create_test_log(product_id, 1000, headers1)
+    create_test_log(product_id, 1500, headers1)
+
+
+
+    create_response_daily = client.get(
+        "/reports/daily-summary",
+        headers=headers1,
+        params={"target_date": Date.today()}   
+        )
+    daily_data = create_response_daily.json()
+
+    assert create_response_daily.status_code == 200
+    assert daily_data["target_calories"] == 3303
+    assert daily_data["remaining_calories"] == 0
+    assert daily_data["exceeded_calories"] == 5422
+def test_sum_day_zero_logs(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    create_response_daily = client.get(
+        "/reports/daily-summary",
+        headers=headers1,
+        params={"target_date": Date.today()}   
+        )
+    daily_data = create_response_daily.json()
+
+    assert create_response_daily.status_code == 200
+    assert daily_data["log_count"] == 0
+    assert daily_data["fat_eaten"] == 0
+    assert daily_data["target_calories"] == 3303
+    assert daily_data["remaining_calories"] == 3303
+    assert daily_data["exceeded_calories"] == 0
+
+def test_sum_day_ownership(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+    create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    create_userprofile(headers2, "male", 170, "83.2", "2005-07-22", "light", "gain_0_1")
+
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
+    create_response_product2 = create_test_product("Makaron", 3, 5, 50, headers1)
+    create_response_product3 = create_test_product("Kurczak", 50, 1, 78, headers2)
+    product_id1 = create_response_product1.json()["id"]
+    product_id2 = create_response_product2.json()["id"]
+    product_id3 = create_response_product3.json()["id"]
+
+    create_test_log(product_id1, 100, headers1)
+    create_test_log(product_id1, 150, headers1)
+    create_test_log(product_id2, 100, headers1)
+    create_test_log(product_id2, 300, headers1)
+    create_test_log(product_id2, 200, headers1)
+    create_test_log(product_id3, 1000, headers2)
+
+
+    create_response_daily1 = client.get(
+        "/reports/daily-summary",
+        headers=headers1,
+        params={"target_date": Date.today()}   
+        )
+    create_response_daily2 = client.get(
+        "/reports/daily-summary",
+        headers=headers2,
+        params={"target_date": Date.today()}   
+        )
+    daily_data1 = create_response_daily1.json()
+    daily_data2 = create_response_daily2.json()
+
+    assert create_response_daily1.status_code == 200
+    assert create_response_daily2.status_code == 200
+
+    assert daily_data1["target_calories"] == 3303
+    assert daily_data2["target_calories"] == 2577
+
+    assert daily_data1["log_count"] == 5
+    assert daily_data1["protein_eaten"] == 35.5
+    assert daily_data1["fat_eaten"] == 32.5
+    assert daily_data1["carbs_eaten"] == 495.0
+
+    assert daily_data2["log_count"] == 1
+    assert daily_data2["protein_eaten"] == 500.0
 
 def test_top_and_average_products(clean_db):
     headers=create_test_authorization()
@@ -773,52 +929,6 @@ def test_log_ownership_log_target_date(clean_db):
     assert len(data1) == 2
     assert len(data2) == 1
 
-def test_reports_ownership_daily_sum(clean_db):
-    headers1 = create_test_authorization(
-        "test1@example.com",
-        "TestPassword123"
-    )
-    headers2 = create_test_authorization(
-        "test2@example.com",
-        "TestPassword321"
-    )
-
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
-    product_id1 = create_response_product1.json()["id"]
-    change_to_global = client.patch(f"/products/{product_id1}/visibility",
-        headers=headers1,
-        params={
-            "is_global": True
-        })
-
-    create_test_log(product_id1, 162, headers1)
-    create_test_log(product_id1, 635, headers1)
-    create_test_log(product_id1, 635, headers1)
-    create_test_log(product_id1, 564, headers2)
-    create_test_log(product_id1, 564, headers2)
-
-    create_response_daily1 = client.get(
-        "/reports/daily-summary",
-        headers=headers1,
-        params={"target_date": Date.today()}   
-        )
-    create_response_daily2 = client.get(
-        "/reports/daily-summary",
-        headers=headers2,
-        params={"target_date": Date.today()}   
-        )
-    daily_data1 = create_response_daily1.json()
-    daily_data2 = create_response_daily2.json()
-
-    assert change_to_global.status_code == 200
-    assert create_response_daily1.status_code == 200
-    assert create_response_daily2.status_code == 200
-
-    assert daily_data1["log_count"] == 3
-    assert daily_data2["log_count"] == 2
-    assert daily_data1["calories"] == 4997.68
-    assert daily_data2["calories"] == 3936.72
-
 def test_reports_ownership_top_and_avg(clean_db):
     headers1 = create_test_authorization(
         "test1@example.com",
@@ -934,3 +1044,137 @@ def test_reports_ownership_top_and_avg(clean_db):
     assert data_avg2[0]["name"] == "Makaron"
     assert data_avg2[0]["number_of_logs"] == 2
     assert data_avg2[0]["weight_avg"] == 2140.5
+
+# # # # # # # # # # # # # # # # # # # # # # # # USERPROFILE # # # # # # # # # # # # # # # # # # # # # # # #
+
+def test_create_userprofile(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+
+    create_userprofile = client.post("/users/me/profile", 
+        headers=headers1,
+        json={
+            "sex": "male",
+            "height": 180,
+            "weight": 90,
+            "birth_date": "2003-06-25",
+            "activity_level": "high",
+            "goal": "maintenance"
+        })
+
+    data = create_userprofile.json()
+
+    assert create_userprofile.status_code == 200
+    assert data["sex"] == "male"
+    assert data["height"] == 180
+    assert data["weight"] == "90.0"
+    assert data["birth_date"] == "2003-06-25"
+    assert data["activity_level"] == "high"
+    assert data["goal"] == "maintenance"
+
+def test_create_userprofile_multiple_userprofiles(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    create_userprofile1 = create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    create_userprofile2 = create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+
+    assert create_userprofile1.status_code == 200
+    assert create_userprofile2.status_code == 409
+
+def test_get_userprofile(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    get_userprofile1 = client.get("/users/me/profile", headers=headers1)
+
+    data = get_userprofile1.json()
+
+    assert get_userprofile1.status_code == 200 
+    assert data["sex"] == "male"
+    assert data["goal"] == "maintenance"
+
+def test_get_userprofile_wrong_user(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+    create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    get_userprofile1 = client.get("/users/me/profile", headers=headers2)    
+
+    assert get_userprofile1.status_code == 404
+
+def test_update_userprofile(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    update_userprofile1 = client.patch("/users/me/profile", headers=headers1,
+    json={
+        "height": 185
+    })
+
+    data = update_userprofile1.json()
+
+    assert update_userprofile1.status_code == 200
+    assert data["height"] == 185
+    assert data["weight"] == "90.0"
+
+def test_update_userprofile_multiple_fields(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    update_userprofile1 = client.patch("/users/me/profile", headers=headers1,
+    json={
+        "height": 185,
+        "weight": "95.3"
+    })
+
+    data = update_userprofile1.json()
+
+    assert update_userprofile1.status_code == 200
+    assert data["height"] == 185
+    assert data["weight"] == "95.3"
+    assert data["sex"] == "male"
+
+def test_update_userprofile_wrong_data_type(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    update_userprofile1 = client.patch("/users/me/profile", headers=headers1,
+    json={
+        "height": "str"
+    })
+
+    assert update_userprofile1.status_code == 422
+
+def test_update_userprofile_wrong_user(clean_db):
+    headers1 = create_test_authorization(
+            "test1@example.com",
+            "TestPassword123"
+        )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+    create_userprofile(headers1, "male", 180, "90.0", "2003-06-25", "high", "maintenance")
+    update_userprofile1 = client.patch("/users/me/profile", headers=headers2,
+    json={
+        "height": 185
+    })
+
+    assert update_userprofile1.status_code == 404

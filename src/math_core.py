@@ -81,7 +81,7 @@ def calculate_tdee(bmr: int, activity_level: UserProfileActivityLevel) -> int:
     tdee = bmr*factor
     return round(tdee)
 
-def WeightGoalRateCalc(weightgoalrate: UserProfileWeightGoalRate) -> Decimal:
+def weightgoalratecalc(weightgoalrate: UserProfileWeightGoalRate) -> Decimal:
     weightgoal_factors = {
         UserProfileWeightGoalRate.loss_0_1: Decimal("-0.1"),
         UserProfileWeightGoalRate.loss_0_2: Decimal("-0.2"),

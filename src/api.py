@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport, ProductCreateComposed, ProductComponentResult, UserCreate, UserResponse, UserLogin, UserProfileCreate, UserProfileResponse, UserProfileUpdate, UserProfileBMRandTDEE
-from src.math_core import calculate_calories, calculate_portion, calculate_components_macro, calculate_bmr, calculate_tdee, WeightGoalRateCalc, daily_calories, calculate_macro, calories_comparision
+from src.schemas import ProductCreate, ProductResponse, ProductUpdate, LogCreate, LogResponse, DailyReport, Top3Report, AvgWeightReport, ProductCreateComposed, ProductComponentResult, UserCreate, UserResponse, UserLogin, UserProfileCreate, UserProfileResponse, UserProfileUpdate
+from src.math_core import calculate_calories, calculate_portion, calculate_components_macro, calculate_bmr, calculate_tdee, weightgoalratecalc, daily_calories, calculate_macro, calories_comparision
 from src.database import get_db, create_product, load_products, load_products_by_id, search_products, update_product, delete_product,  create_log, load_log_by_id, load_log_by_date, sum_day, delete_log, report_top_eaten_products, report_average_weight_of_log, load_components, create_component, load_user_by_email, create_user, change_product_visibility, load_userprofile_by_user_id, create_userprofile, update_userprofile
 from src.security import hash_password, verify_password, create_access_token, create_refresh_token
 from src.auth import get_current_user, get_refresh_user
@@ -255,7 +255,7 @@ def sum_day_endpoint(
         )
     bmr = calculate_bmr(userprofile.sex, userprofile.weight, userprofile.height, userprofile.birth_date)
     tdee = calculate_tdee(bmr, userprofile.activity_level)
-    daily_change = WeightGoalRateCalc(userprofile.goal)
+    daily_change = weightgoalratecalc(userprofile.goal)
     target_calories = daily_calories(tdee, daily_change)
     macros = calculate_macro(target_calories)
     calories = calories_comparision(target_calories, raport["calories"])
@@ -433,20 +433,3 @@ def update_userprofile_endpoint(
         raise HTTPException(status_code=404, detail="UserProfile not found")
     return updated_userprofile
 
-@app.get("/users/me/energy", response_model=UserProfileBMRandTDEE, tags=["Users"])
-def get_bmr_and_tdee(
-    session: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-    ):
-    userprofile = load_userprofile_by_user_id(session=session, user_id=current_user.id)
-    if not userprofile:
-        raise HTTPException(
-            status_code=404,
-            detail="UserProfile not found."
-        )
-    bmr = calculate_bmr(userprofile.sex, userprofile.weight, userprofile.height, userprofile.birth_date)
-    tdee = calculate_tdee(bmr, userprofile.activity_level)
-    return {
-        "bmr": bmr,
-        "tdee": tdee
-    }
