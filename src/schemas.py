@@ -66,11 +66,22 @@ class LogResponse(BaseModel):
 # # # # # # # # # # # # # # # # # # # # # # # # REPORTS # # # # # # # # # # # # # # # # # # # # # # # #
 
 class DailyReport(BaseModel):
-    calories: float
-    protein: float
-    fat: float
-    carbs: float
+    bmr: int
+    tdee: int
+    target_calories: int
+    remaining_calories: int
+    exceeded_calories: int
+    protein_min: int
+    protein_max: int
+    protein_eaten: int
+    fat_min: int
+    fat_max: int
+    fat_eaten: int
+    carbs_min: int
+    carbs_max: int
+    carbs_eaten: int
     log_count: int
+    
 
 class Top3Report(BaseModel):
     name: str
@@ -129,3 +140,6 @@ class UserProfileUpdate(BaseModel):
 class UserProfileBMRandTDEE(BaseModel):
     bmr: int
     tdee: int
+
+
+    

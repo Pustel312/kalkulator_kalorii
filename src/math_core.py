@@ -99,6 +99,32 @@ def WeightGoalRateCalc(weightgoalrate: UserProfileWeightGoalRate) -> Decimal:
     else:
         return Decimal("0")
 
-def daily_calories(tdee: int, daily_change: Decimal):
+def daily_calories(tdee: int, daily_change: Decimal) -> int:
     target_calories = tdee+daily_change
     return round(target_calories)
+
+def calculate_macro(target_calories: int):
+    protein_min = (target_calories*0.15)/4
+    protein_max = (target_calories*0.25)/4
+    fat_min = (target_calories*0.2)/9
+    fat_max = (target_calories*0.3)/9
+    carbs_min = (target_calories*0.45)/4
+    carbs_max = (target_calories*0.60)/4
+
+    return {
+        "protein_min": round(protein_min),
+        "protein_max": round(protein_max),
+        "fat_min": round(fat_min),
+        "fat_max": round(fat_max),
+        "carbs_min": round(carbs_min),
+        "carbs_max": round(carbs_max),
+        
+    }
+
+def calories_comparision(target_calories: int, eaten_calories: int) -> int:
+    remaining_calories = max(target_calories - eaten_calories, 0)
+    exceeded_calories = max(eaten_calories - target_calories, 0)
+    return {
+        "remaining_calories": round(remaining_calories),
+        "exceeded_calories": round(exceeded_calories)
+    }
