@@ -14,6 +14,38 @@ Projekt wykorzystuje FastAPI, SQLAlchemy, PostgreSQL oraz JWT authentication.
 - PostgreSQL
 - Alembic
 - pytest
+- Docker
+
+
+### Uruchomienie projektu — Docker
+
+Wymagania: Docker Desktop z uruchomionym Docker Engine.
+
+1. Sklonuj repozytorium i przejdź do katalogu projektu.
+2. Utwórz plik `.env.docker` z wymaganymi zmiennymi środowiskowymi (konfiguracja PostgreSQL, testowej bazy danych i JWT)(w pliku `.env.example` rozpisane są przykładowe dane potrzebne do wprowadzenia do `env.docker`).
+3. Uruchom środowisko:
+```bash
+docker compose --env-file .env.docker up -d --build
+```
+
+Docker Compose automatycznie:
+- Uruchamia PostgreSQL i oczekuje na jego gotowość.
+- Wykonuje migracje Alembica.
+- Uruchamia aplikację FastAPI.
+
+Dokumentacja API: http://localhost:8000/docs
+
+Uruchomienie testów:
+```bash
+docker compose --env-file .env.docker run --rm tests
+```
+
+Zatrzymanie środowiska:
+```bash
+docker compose --env-file .env.docker down
+```
+
+Dane PostgreSQL są przechowywane w Docker volume i pozostają dostępne po ponownym uruchomieniu środowiska.
 
 ## Struktura projektu
 
