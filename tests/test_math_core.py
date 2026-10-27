@@ -1,7 +1,7 @@
 import pytest
 from src.models import Product
 from src.enums import UserProfileSex, UserProfileActivityLevel, UserProfileWeightGoalRate
-from src.math_core import calculate_calories, calculate_portion, calculate_bmr, calculate_tdee, weightgoalratecalc, calculate_macro, calories_comparision
+from core.math_core import calculate_calories, calculate_portion, calculate_bmr, calculate_tdee, weightgoalratecalc, calculate_macro, calories_comparision
 from decimal import Decimal
 from datetime import date as Date
 

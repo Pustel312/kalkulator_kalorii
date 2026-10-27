@@ -24,3 +24,9 @@ class UserProfileWeightGoalRate(str, Enum):
     gain_0_1 = "gain_0_1"
     gain_0_2 = "gain_0_2"
     gain_0_3 = "gain_0_3"
+
+class PeriodType(str, Enum):
+    day = "day"
+    week = "week"
+    month = "month"
+    year = "year"

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from datetime import date as Date, datetime
-from src.enums import ProductType, UserProfileWeightGoalRate, UserProfileActivityLevel, UserProfileSex
+from src.enums import ProductType, UserProfileWeightGoalRate, UserProfileActivityLevel, UserProfileSex, PeriodType
 from decimal import Decimal
 # # # # # # # # # # # # # # # # # # # # # # # # PRODUCTS # # # # # # # # # # # # # # # # # # # # # # # #
 
@@ -62,12 +62,18 @@ class LogResponse(BaseModel):
 
 # # # # # # # # # # # # # # # # # # # # # # # # REPORTS # # # # # # # # # # # # # # # # # # # # # # # #
 
-class DailyReport(BaseModel):
+class PeriodReport(BaseModel):
+    period: PeriodType
+    date_from: Date
+    date_to: Date
+
     bmr: int
     tdee: int
+
     target_calories: int
     remaining_calories: int
     exceeded_calories: int
+
     protein_min: int
     protein_max: int
     protein_eaten: float
@@ -77,8 +83,11 @@ class DailyReport(BaseModel):
     carbs_min: int
     carbs_max: int
     carbs_eaten: float
+
     log_count: int
-    
+    days_with_logs: int
+    days_without_logs: int
+    avg_calories_per_logged_day: int
 
 class Top3Report(BaseModel):
     name: str
@@ -90,6 +99,20 @@ class AvgWeightReport(BaseModel):
     number_of_logs: int
     weight_avg: float
 
+class PeriodSummary(BaseModel):
+    period: PeriodType
+    date_from: Date
+    date_to: Date
+
+    protein_min: int
+    protein_max: int
+    protein_eaten: float
+    fat_min: int
+    fat_max: int
+    fat_eaten: float
+    carbs_min: int
+    carbs_max: int
+    carbs_eaten: float
 # # # # # # # # # # # # # # # # # # # # # # # # USERS # # # # # # # # # # # # # # # # # # # # # # # #
 
 class UserCreate(BaseModel):

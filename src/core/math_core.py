@@ -128,3 +128,7 @@ def calories_comparision(target_calories: int, eaten_calories: int) -> int:
         "remaining_calories": round(remaining_calories),
         "exceeded_calories": round(exceeded_calories)
     }
+
+def calculate_days(date_from: Date, date_to: Date) -> int:
+    days = (date_to - date_from).days + 1
+    return days

@@ -1,7 +1,7 @@
 from src.models import Product, ProductComponent
 from src.schemas import ProductUpdate
 from src.enums import ProductType
-from src.math_core import calculate_calories
+from src.core.math_core import calculate_calories
 from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from src.schemas import ProductCreate, ProductResponse, ProductUpdate, ProductCreateComposed, ProductComponentResult
-from src.math_core import calculate_calories, calculate_components_macro
+from src.core.math_core import calculate_calories, calculate_components_macro
 from src.database.session import get_db
 from src.database.products import create_product, load_products, load_products_by_id, search_products, update_product, delete_product, load_components, create_component, change_product_visibility
 from src.auth import get_current_user

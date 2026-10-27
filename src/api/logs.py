@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from src.schemas import LogCreate, LogResponse
-from src.math_core import calculate_portion
+from src.core.math_core import calculate_portion
 from src.database.session import get_db
 from src.database.products import load_products_by_id
 from src.database.logs import create_log, load_log_by_id, load_log_by_date, delete_log

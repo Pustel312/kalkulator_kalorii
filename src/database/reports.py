@@ -7,7 +7,8 @@ from datetime import date as Date
 # # # # # # # # # # # # # # # # # # # # # # # # REPORTS # # # # # # # # # # # # # # # # # # # # # # # #
 
 def sum_day(
-        target_date: Date,
+        date_from: Date,
+        date_to: Date,
         session: Session,
         user_id: int
     ):
@@ -16,15 +17,17 @@ def sum_day(
         func.coalesce(func.sum(Log.protein), 0),
         func.coalesce(func.sum(Log.fat), 0),
         func.coalesce(func.sum(Log.carbs), 0),
-        func.count(Log.id)
-    ).where(Log.date == target_date, Log.user_id == user_id)
-    calories, protein, fat, carbs, log_count = session.execute(result).one()
+        func.count(Log.id),
+        func.count(func.distinct(Log.date))
+    ).where(Log.date.between(date_from, date_to), Log.user_id == user_id)
+    calories, protein, fat, carbs, log_count, days_with_logs = session.execute(result).one()
     return {
         "calories": calories,
         "protein": protein,
         "fat": fat,
         "carbs": carbs,
-        "log_count": log_count
+        "log_count": log_count,
+        "days_with_logs": days_with_logs
     }
 
 def report_top_eaten_products(session: Session, user_id: int):
