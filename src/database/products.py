@@ -1,5 +1,5 @@
-from src.models import Product, ProductComponent
-from src.schemas import ProductUpdate
+from src.models import Product, ProductComponent, ProductRecipe
+from src.schemas import ProductUpdate, ProductRecipeUpdate
 from src.enums import ProductType
 from src.core.math_core import calculate_calories
 from sqlalchemy import select, or_
@@ -141,3 +141,77 @@ def create_component(
     session.commit()
     session.refresh(component)
     return component
+
+# # # # # # # # # # # # # # # # # # # # # # # # RECIPES # # # # # # # # # # # # # # # # # # # # # # # #
+def load_recipe_by_product_id(
+    owner_id: int,
+    session: Session,
+    product_id: int
+    ):
+    existing_product = load_owned_product_by_id(session, product_id, owner_id)
+    if not existing_product:
+        return None
+    stmt = select(ProductRecipe).where(
+        ProductRecipe.product_id == product_id
+    )
+    result = session.execute(stmt)
+    existing_recipe = result.scalar_one_or_none()
+    if not existing_recipe:
+        return False
+    return existing_recipe
+
+def create_recipe(
+    session: Session,
+    owner_id: int,
+    product_id: int,
+    recipe: str,
+    servings: int,
+    preparation_time: int | None = None
+    ):
+    existing_recipe = load_recipe_by_product_id(owner_id, session, product_id)
+    if existing_recipe is None:
+        return None
+    if existing_recipe:
+        return False
+    new_recipe = ProductRecipe(
+        product_id = product_id,
+        recipe = recipe,
+        servings = servings,
+        preparation_time = preparation_time
+    )
+    session.add(new_recipe)
+    session.commit()
+    session.refresh(new_recipe)
+    return new_recipe
+
+def update_recipe(
+    owner_id: int,
+    session: Session,
+    recipe_update: ProductRecipeUpdate,
+    product_id: int
+    ):        
+    existing_recipe = load_recipe_by_product_id(owner_id, session, product_id)
+    if existing_recipe is None:
+        return None
+    if not existing_recipe:
+        return False
+    update_data = recipe_update.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(existing_recipe, field, value)
+    session.commit()
+    session.refresh(existing_recipe)
+    return existing_recipe
+
+def delete_recipe(
+    owner_id: int,
+    session: Session,
+    product_id: int
+    ):
+    existing_recipe = load_recipe_by_product_id(owner_id, session, product_id)
+    if existing_recipe is None:
+        return None
+    if not existing_recipe:
+        return False
+    session.delete(existing_recipe)
+    session.commit()
+    return True

@@ -8,12 +8,18 @@ from decimal import Decimal
 class ProductCreate(BaseModel):
     name: str = Field(..., min_length=1, description="Nazwa produktu")
     type: ProductType = Field(..., description="Typ produktu")
+    protein: float = Field(..., ge=0, description="Białko(>=0)")
+    fat: float = Field(..., ge=0, description="Tłuszcze(>=0)")
+    carbs: float = Field(..., ge=0, description="Węglowodany(>=0)")
+    weight: float = Field(..., gt=0, description="Waga produktu")
+
+
+class ProductResponse(BaseModel):
+    name: str = Field(..., min_length=1, description="Nazwa produktu")
+    type: ProductType = Field(..., description="Typ produktu")
     protein: float = Field(..., ge=0, description="Białko w 100g (>=0)")
     fat: float = Field(..., ge=0, description="Tłuszcze w 100g (>=0)")
     carbs: float = Field(..., ge=0, description="Węglowodany w 100g (>=0)")
-
-
-class ProductResponse(ProductCreate):
     id: int
     calories: float
 
@@ -44,6 +50,22 @@ class ProductComponentResult(BaseModel):
     id: int
     name: str = Field(..., min_length=1, description="Nazwa produktu")
     components: list[ProductComponentDetails] = Field(..., min_length=1, description="Komponenty")
+# # # # # # # # # # # # # # # # # # # # # # # # RECIPES # # # # # # # # # # # # # # # # # # # # # # # #
+
+class ProductRecipeCreate(BaseModel):
+    product_id: int
+    recipe: str = Field(..., min_length=1, description="recipe")
+    servings: int = Field(..., gt=0, description="number of servings")
+    preparation_time: int | None = Field(default=None, ge=0, description="time of preparation")
+
+class ProductRecipeResponse(ProductRecipeCreate):
+    model_config = ConfigDict(from_attributes=True)
+    
+class ProductRecipeUpdate(BaseModel):
+    recipe: str = Field(default=None, min_length=1)
+    servings: int = Field(default=None, gt=0)
+    preparation_time: int | None = Field(default=None, ge=0)
+
 # # # # # # # # # # # # # # # # # # # # # # # # LOGS # # # # # # # # # # # # # # # # # # # # # # # #
     
 class LogCreate(BaseModel):

@@ -132,3 +132,7 @@ def calories_comparision(target_calories: int, eaten_calories: int) -> int:
 def calculate_days(date_from: Date, date_to: Date) -> int:
     days = (date_to - date_from).days + 1
     return days
+
+def calculate_standard_portion(weight: float) -> float:
+    factor = 100/weight
+    return factor

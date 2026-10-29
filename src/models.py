@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, CheckConstraint, text, Index, Enum as SqlEnum, Numeric
+from sqlalchemy import ForeignKey, CheckConstraint, text, Index, Enum as SqlEnum, Numeric, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import date as Date, datetime, timezone
 from src.enums import ProductType, UserProfileActivityLevel, UserProfileWeightGoalRate, UserProfileSex
@@ -68,6 +68,14 @@ class ProductComponent(Base):
         CheckConstraint("weight > 0", name="PCweight_higher_than_zero"),
     )
 
+class ProductRecipe(Base):
+    __tablename__="product_recipe"
+
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
+    recipe: Mapped[str] = mapped_column(Text, nullable=False)
+    servings: Mapped[int]
+    preparation_time: Mapped[int | None] = mapped_column(default=None, nullable=True)
+    
 class Log(Base):
     __tablename__="logs"
 
