@@ -1,9 +1,13 @@
 from src.enums import ProductType
 from tests.common import client
+from datetime import date as Date
+from sqlalchemy.orm import Session
+from tests.conftest import test_engine
+from src.models import Log
 
-# # # # # # # # # # # # # # # # # # # # # # # # HELPERS/FIXTURES # # # # # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # # # # # # HELPERS - CREATE # # # # # # # # # # # # # # # # # # # # # # # #
 
-def create_test_product(name, protein, fat, carbs, headers, product_type=ProductType.product
+def create_test_product(name, protein, fat, carbs, weight, headers, product_type=ProductType.product
     ):
     response = client.post(
         "/products",
@@ -13,7 +17,21 @@ def create_test_product(name, protein, fat, carbs, headers, product_type=Product
             "type": product_type,
             "protein": protein,
             "fat": fat,
-            "carbs": carbs 
+            "carbs": carbs,
+            "weight": weight
+        }
+    )
+    return response
+
+def create_test_recipe(product_id, recipe, servings, preparation_time, headers):
+    response = client.post(
+        "/recipes",
+        headers=headers,
+        json={
+            "product_id": product_id,
+            "recipe": recipe,
+            "servings": servings,
+            "preparation_time": preparation_time
         }
     )
     return response
@@ -75,3 +93,11 @@ def create_userprofile(headers, sex, height, weight, birth_date, activity_level,
         })
 
     return response
+
+# # # # # # # # # # # # # # # # # # # # # # # # HELPERS - MODIFY # # # # # # # # # # # # # # # # # # # # # # # #
+
+def modify_test_log_date(log_id: int, target_date: Date):
+    with Session(test_engine) as session:
+        log = session.get(Log, log_id)
+        log.date = target_date
+        session.commit()

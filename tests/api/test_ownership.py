@@ -1,5 +1,5 @@
 from tests.common import client
-from tests.helpers import create_test_product, create_test_log, create_test_authorization, create_test_user, login_test_user
+from tests.helpers import create_test_product, create_test_log, create_test_authorization, create_test_user, login_test_user, create_test_recipe
 
 # # # # # # # # # # # # # # # # # # # # # # # # OWNERSHIP # # # # # # # # # # # # # # # # # # # # # # # #
 def test_login(
@@ -71,7 +71,8 @@ def test_refresh_token_as_access_token(clean_db,
                 "protein": 7,
                 "fat": 1,
                 "carbs": 78,
-                "type": "product"
+                "type": "product",
+                "weight": 100
             }
         )
     
@@ -91,7 +92,8 @@ def test_invalid_token(clean_db):
                 "protein": 7,
                 "fat": 1,
                 "carbs": 78,
-                "type": "product"
+                "type": "product",
+                "weight": 100
             }
         )
     
@@ -109,7 +111,7 @@ def test_private_product_visible_only_to_owner(clean_db):
         "test2@example.com",
         "TestPassword321"
     )
-    create_test_product("Ryż", 7, 1, 78, headers1)
+    create_test_product("Ryż", 7, 1, 78, 100, headers1)
     user1_list = client.get("/products",
         headers=headers1)
     user2_list = client.get("/products",
@@ -132,7 +134,7 @@ def test_public_product_visible_to_all(clean_db):
         "test2@example.com",
         "TestPassword321"
     )
-    create_product = create_test_product("Ryż", 7, 1, 78, headers1)
+    create_product = create_test_product("Ryż", 7, 1, 78, 100, headers1)
     product_id1 = create_product.json()["id"]
     visibility_response = client.patch(f"/products/{product_id1}/visibility",
         headers=headers1,
@@ -163,7 +165,7 @@ def test_not_own_product_patch_blocked(clean_db):
         "test2@example.com",
         "TestPassword321"
     )
-    create_product = create_test_product("Ryż", 7, 1, 78, headers1)
+    create_product = create_test_product("Ryż", 7, 1, 78, 100, headers1)
     product_id = create_product.json()["id"]
     change_product = client.patch(
         f"/products/{product_id}",
@@ -184,7 +186,7 @@ def test_not_own_product_delete_blocked(clean_db):
         "test2@example.com",
         "TestPassword321"
     )
-    create_product = create_test_product("Ryż", 7, 1, 78, headers1)
+    create_product = create_test_product("Ryż", 7, 1, 78, 100,headers1)
     product_id = create_product.json()["id"]
     delete_product = client.delete(
         f"/products/{product_id}",
@@ -201,7 +203,7 @@ def test_not_own_product_change_visibility_blocked(clean_db):
         "test2@example.com",
         "TestPassword321"
     )
-    create_product = create_test_product("Ryż", 7, 1, 78, headers1)
+    create_product = create_test_product("Ryż", 7, 1, 78, 100, headers1)
     product_id = create_product.json()["id"]
     visibility_response = client.patch(f"/products/{product_id}/visibility",
         headers=headers2,
@@ -220,7 +222,7 @@ def test_log_ownership(clean_db):
         "TestPassword321"
     )
 
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, 100, headers1)
     product_id1 = create_response_product1.json()["id"]
     change_to_global = client.patch(f"/products/{product_id1}/visibility",
         headers=headers1,
@@ -254,7 +256,7 @@ def test_log_ownership_delete_log(clean_db):
         "TestPassword321"
     )
 
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, 100, headers1)
     product_id1 = create_response_product1.json()["id"]
     change_to_global = client.patch(f"/products/{product_id1}/visibility",
         headers=headers1,
@@ -289,7 +291,7 @@ def test_log_ownership_log_target_date(clean_db):
         "TestPassword321"
     )
 
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, 100, headers1)
     product_id1 = create_response_product1.json()["id"]
     change_to_global = client.patch(f"/products/{product_id1}/visibility",
         headers=headers1,
@@ -339,10 +341,10 @@ def test_reports_ownership_top_and_avg(clean_db):
         "test2@example.com",
         "TestPassword321"
     )
-    create_response_product1 = create_test_product("Ryż", 7, 1, 78, headers1)
-    create_response_product2 = create_test_product("Makaron", 10, 3, 50, headers1)
-    create_response_product3 = create_test_product("Ziemniaki", 4, 0, 40, headers1)
-    create_response_product4 = create_test_product("Kasza", 6, 5, 60, headers1)
+    create_response_product1 = create_test_product("Ryż", 7, 1, 78, 100, headers1)
+    create_response_product2 = create_test_product("Makaron", 10, 3, 50, 100, headers1)
+    create_response_product3 = create_test_product("Ziemniaki", 4, 0, 40, 100, headers1)
+    create_response_product4 = create_test_product("Kasza", 6, 5, 60, 100, headers1)
     product_id1 = create_response_product1.json()["id"]
     product_id2 = create_response_product2.json()["id"]
     product_id3 = create_response_product3.json()["id"]
@@ -445,3 +447,111 @@ def test_reports_ownership_top_and_avg(clean_db):
     assert data_avg2[0]["name"] == "Makaron"
     assert data_avg2[0]["number_of_logs"] == 2
     assert data_avg2[0]["weight_avg"] == 2140.5
+
+def test_create_not_owned_recipe(clean_db):
+    headers1 = create_test_authorization(
+        "test1@example.com",
+        "TestPassword123"
+    )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+
+    product = create_test_product("Ryż", 7, 1, 78, 100, headers1)
+    product_id = product.json()["id"]
+    response_create_recipe = create_test_recipe(product_id, "test", 2, 90, headers2)
+
+    assert response_create_recipe.status_code == 404
+
+def test_get_not_owned_recipe(clean_db):
+    headers1 = create_test_authorization(
+        "test1@example.com",
+        "TestPassword123"
+    )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+
+    product = create_test_product("Ryż", 7, 1, 78, 100, headers1)
+    product_id = product.json()["id"]
+    create_test_recipe(product_id, "test", 2, 90, headers1)
+
+    response_get_recipe = client.get(
+        "/recipes",
+        headers=headers2,
+        params={
+            "product_id": product_id
+        })
+
+    assert response_get_recipe.status_code == 404
+
+def test_update_not_owned_recipe(clean_db):
+    headers1 = create_test_authorization(
+        "test1@example.com",
+        "TestPassword123"
+    )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+
+    product = create_test_product("Ryż", 7, 1, 78, 100, headers1)
+    product_id = product.json()["id"]
+    create_test_recipe(product_id, "test", 2, 90, headers1)
+
+    response_update_recipe = client.patch(
+        "/recipes",
+        headers=headers2,
+        params={
+            "product_id": product_id
+        },
+        json={
+            "servings": 5
+        }
+    )
+
+    response_get_recipe = client.get(
+        "/recipes",
+        headers=headers1,
+        params={
+            "product_id": product_id
+        })
+    data = response_get_recipe.json()
+
+    assert response_update_recipe.status_code == 404
+    assert response_get_recipe.status_code == 200
+    assert data["servings"] == 2
+
+def test_delete_not_owned_recipe(clean_db):
+    headers1 = create_test_authorization(
+        "test1@example.com",
+        "TestPassword123"
+    )
+    headers2 = create_test_authorization(
+        "test2@example.com",
+        "TestPassword321"
+    )
+
+    product = create_test_product("Ryż", 7, 1, 78, 100, headers1)
+    product_id = product.json()["id"]
+    create_test_recipe(product_id, "test", 2, 90, headers1)
+
+    response_delete_recipe = client.delete(
+        "/recipes",
+        headers=headers2,
+        params={
+            "product_id": product_id
+        }
+    )
+
+    response_get_recipe = client.get(
+        "/recipes",
+        headers=headers1,
+        params={
+            "product_id": product_id
+        })
+
+    assert response_delete_recipe.status_code == 404
+    assert response_get_recipe.status_code == 200

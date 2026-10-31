@@ -1,7 +1,7 @@
 import pytest
 from src.models import Product
 from src.enums import UserProfileSex, UserProfileActivityLevel, UserProfileWeightGoalRate
-from core.math_core import calculate_calories, calculate_portion, calculate_bmr, calculate_tdee, weightgoalratecalc, calculate_macro, calories_comparision
+from src.core.math_core import calculate_calories, calculate_portion, calculate_bmr, calculate_tdee, weightgoalratecalc, calculate_macro, calories_comparision, calculate_standard_portion
 from decimal import Decimal
 from datetime import date as Date
 
@@ -130,3 +130,15 @@ def test_calculate_macro():
 )
 def test_calories_comparision(target, eaten, expected):
     assert calories_comparision(target, eaten) == expected
+
+@pytest.mark.parametrize(
+    "target, expected",
+    [
+        (100, 1),
+        (250, 0.4),
+        (50, 2.0)
+    ]
+)
+
+def test_calculate_standard_portion(target, expected):
+    assert calculate_standard_portion(target) == expected
