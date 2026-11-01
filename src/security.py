@@ -1,18 +1,22 @@
-from pwdlib import PasswordHash
-import jwt
-from datetime import datetime, timedelta, timezone
 import os
+from datetime import UTC, datetime, timedelta
+
+import jwt
 from dotenv import load_dotenv
+from pwdlib import PasswordHash
+
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_TIME = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 REFRESH_TOKEN_EXPIRE_TIME = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
 
+
 def hash_password(password: str) -> str:
     password_hash = PasswordHash.recommended()
     hashed_password = password_hash.hash(password)
     return hashed_password
+
 
 def verify_password(password: str, hashed_password: str) -> bool:
     password_hash = PasswordHash.recommended()
@@ -20,44 +24,27 @@ def verify_password(password: str, hashed_password: str) -> bool:
     return verified_password
 
 
-
 def create_access_token(user_id: int) -> str:
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_TIME)
-    payload = {
-        "sub": str(user_id),
-        "exp": expires_at,
-        "token_type": "access"
-    }
-
-    token = jwt.encode(
-        payload,
-        SECRET_KEY,
-        ALGORITHM
+    expires_at = datetime.now(UTC) + timedelta(
+        minutes=ACCESS_TOKEN_EXPIRE_TIME
     )
+    payload = {"sub": str(user_id), "exp": expires_at, "token_type": "access"}
+
+    token = jwt.encode(payload, SECRET_KEY, ALGORITHM)
     return token
+
 
 def create_refresh_token(user_id: int) -> str:
-    expires_at = datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_TIME)
-    payload = {
-        "sub": str(user_id),
-        "exp": expires_at,
-        "token_type": "refresh"
-    }
+    expires_at = datetime.now(UTC) + timedelta(days=REFRESH_TOKEN_EXPIRE_TIME)
+    payload = {"sub": str(user_id), "exp": expires_at, "token_type": "refresh"}
 
-    token = jwt.encode(
-        payload,
-        SECRET_KEY,
-        ALGORITHM
-    )
+    token = jwt.encode(payload, SECRET_KEY, ALGORITHM)
     return token
+
 
 def decode_token(token: str):
     try:
-        payload = jwt.decode(
-            token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
-        )
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except jwt.ExpiredSignatureError:
         return None

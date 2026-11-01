@@ -1,13 +1,34 @@
-from sqlalchemy import ForeignKey, CheckConstraint, text, Index, Enum as SqlEnum, Numeric, Text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from datetime import date as Date, datetime, timezone
-from src.enums import ProductType, UserProfileActivityLevel, UserProfileWeightGoalRate, UserProfileSex
+from datetime import UTC, datetime
+from datetime import date as Date
 from decimal import Decimal
+
+from sqlalchemy import (
+    CheckConstraint,
+    ForeignKey,
+    Index,
+    Numeric,
+    Text,
+    text,
+)
+from sqlalchemy import (
+    Enum as SqlEnum,
+)
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from src.enums import (
+    ProductType,
+    UserProfileActivityLevel,
+    UserProfileSex,
+    UserProfileWeightGoalRate,
+)
+
+
 class Base(DeclarativeBase):
     pass
 
+
 class Product(Base):
-    __tablename__="products"
+    __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
@@ -20,19 +41,19 @@ class Product(Base):
     active: Mapped[bool]
     is_global: Mapped[bool] = mapped_column(default=False, nullable=False)
     description: Mapped[str | None] = mapped_column(nullable=True)
-    
+
     logs: Mapped[list["Log"]] = relationship(back_populates="product")
     user: Mapped["User"] = relationship(back_populates="products")
     components: Mapped[list["ProductComponent"]] = relationship(
-        back_populates="parent_product", 
-        foreign_keys="ProductComponent.parent_product_id"
-        )
+        back_populates="parent_product",
+        foreign_keys="ProductComponent.parent_product_id",
+    )
     used_in: Mapped[list["ProductComponent"]] = relationship(
         back_populates="component_product",
-        foreign_keys="ProductComponent.component_product_id"
-        )
-        
-    #P from Products for args
+        foreign_keys="ProductComponent.component_product_id",
+    )
+
+    # P from Products for args
     __table_args__ = (
         CheckConstraint("protein >= 0", name="Pprotein_nonnegative"),
         CheckConstraint("fat >= 0", name="Pfat_nonnegative"),
@@ -43,46 +64,55 @@ class Product(Base):
             "owner_id",
             "name",
             unique=True,
-            postgresql_where=text("active IS TRUE")
+            postgresql_where=text("active IS TRUE"),
         ),
         Index(
             "uq_active_global_product_name",
             "name",
             unique=True,
-            postgresql_where=text("active IS TRUE AND is_global IS TRUE")
-        )
+            postgresql_where=text("active IS TRUE AND is_global IS TRUE"),
+        ),
     )
 
+
 class ProductComponent(Base):
-    __tablename__="product_components"
+    __tablename__ = "product_components"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     parent_product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
     component_product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
     weight: Mapped[float]
 
-    parent_product: Mapped[Product] = relationship(back_populates="components", foreign_keys=[parent_product_id])
-    component_product: Mapped[Product] = relationship(back_populates="used_in", foreign_keys=[component_product_id])
-
-    __table_args__ = (
-        CheckConstraint("weight > 0", name="PCweight_higher_than_zero"),
+    parent_product: Mapped[Product] = relationship(
+        back_populates="components", foreign_keys=[parent_product_id]
+    )
+    component_product: Mapped[Product] = relationship(
+        back_populates="used_in", foreign_keys=[component_product_id]
     )
 
-class ProductRecipe(Base):
-    __tablename__="product_recipe"
+    __table_args__ = (CheckConstraint("weight > 0", name="PCweight_higher_than_zero"),)
 
-    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
+
+class ProductRecipe(Base):
+    __tablename__ = "product_recipe"
+
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), primary_key=True
+    )
     recipe: Mapped[str] = mapped_column(Text, nullable=False)
     servings: Mapped[int]
     preparation_time: Mapped[int | None] = mapped_column(default=None, nullable=True)
-    
+
+
 class Log(Base):
-    __tablename__="logs"
+    __tablename__ = "logs"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     product_id: Mapped[int] = mapped_column(ForeignKey("products.id"))
-    product_type: Mapped[ProductType] = mapped_column(SqlEnum(ProductType, name="product_type"))
+    product_type: Mapped[ProductType] = mapped_column(
+        SqlEnum(ProductType, name="product_type")
+    )
     weight: Mapped[float]
     protein: Mapped[float]
     fat: Mapped[float]
@@ -92,7 +122,7 @@ class Log(Base):
 
     user: Mapped["User"] = relationship(back_populates="logs")
     product: Mapped["Product"] = relationship(back_populates="logs")
-    #L from Logs for args
+    # L from Logs for args
     __table_args__ = (
         CheckConstraint("weight > 0", name="Lweight_higher_than_zero"),
         CheckConstraint("protein >= 0", name="Lprotein_nonnegative"),
@@ -101,28 +131,44 @@ class Log(Base):
         CheckConstraint("calories >= 0", name="Lcalories_nonnegative"),
     )
 
+
 class User(Base):
-    __tablename__="users"
+    __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(nullable=False)
     active: Mapped[bool] = mapped_column(default=True, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc)) #zwraca jako date aktualny moment w ktorym utworzone zostalo konto
+    created_at: Mapped[datetime] = mapped_column(
+        default=lambda: datetime.now(UTC)
+    )  # zwraca jako date aktualny moment w ktorym utworzone zostalo konto
 
-    userprofile: Mapped["UserProfile"] = relationship(back_populates="user", cascade="all, delete-orphan")
+    userprofile: Mapped["UserProfile"] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
     products: Mapped[list["Product"]] = relationship(back_populates="user")
     logs: Mapped[list["Log"]] = relationship(back_populates="user")
 
-class UserProfile(Base):
-    __tablename__="userprofiles"
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+class UserProfile(Base):
+    __tablename__ = "userprofiles"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
     sex: Mapped[UserProfileSex] = mapped_column(SqlEnum(UserProfileSex, name="sex"))
     height: Mapped[int] = mapped_column(nullable=False)
     weight: Mapped[Decimal] = mapped_column(Numeric(4, 1), nullable=False)
     birth_date: Mapped[Date]
-    activity_level: Mapped[UserProfileActivityLevel] = mapped_column(SqlEnum(UserProfileActivityLevel, name="activity_level"), default=UserProfileActivityLevel.moderate, nullable=False)
-    goal: Mapped[UserProfileWeightGoalRate] = mapped_column(SqlEnum(UserProfileWeightGoalRate, name="goal_rate"), default=UserProfileWeightGoalRate.maintenance, nullable=False)
+    activity_level: Mapped[UserProfileActivityLevel] = mapped_column(
+        SqlEnum(UserProfileActivityLevel, name="activity_level"),
+        default=UserProfileActivityLevel.moderate,
+        nullable=False,
+    )
+    goal: Mapped[UserProfileWeightGoalRate] = mapped_column(
+        SqlEnum(UserProfileWeightGoalRate, name="goal_rate"),
+        default=UserProfileWeightGoalRate.maintenance,
+        nullable=False,
+    )
 
     user: Mapped["User"] = relationship(back_populates="userprofile")

@@ -1,10 +1,17 @@
-from src.enums import PeriodType
-from datetime import date as Date, timedelta
 from calendar import monthrange
+from datetime import date as Date
+from datetime import timedelta
 
-def calculate_period(period: PeriodType, reference_date: Date | None = None) -> tuple[Date, Date]:
-    if not isinstance(period, PeriodType): #sprawdza czy argument period jest wartoscia klasy PeriodType
-        raise ValueError("Invalid period type")
+from src.enums import PeriodType
+
+
+def calculate_period(
+    period: PeriodType, reference_date: Date | None = None
+) -> tuple[Date, Date]:
+    if not isinstance(
+        period, PeriodType
+    ):  # sprawdza czy argument period jest wartoscia klasy PeriodType
+        raise TypeError("Invalid period type")
     if reference_date is None:
         reference_date = Date.today()
 
@@ -16,7 +23,9 @@ def calculate_period(period: PeriodType, reference_date: Date | None = None) -> 
         date_to = date_from + timedelta(days=6)
 
     elif period == PeriodType.month:
-        date_from = Date(reference_date.year, reference_date.month, 1) # pierwszy dzien biezacego miesiaca
+        date_from = Date(
+            reference_date.year, reference_date.month, 1
+        )  # pierwszy dzien biezacego miesiaca
         last_day = monthrange(reference_date.year, reference_date.month)[1]
         date_to = Date(reference_date.year, reference_date.month, last_day)
 

@@ -1,12 +1,19 @@
-from src.models import User, UserProfile
-from src.schemas import UserProfileUpdate
-from src.enums import UserProfileActivityLevel, UserProfileWeightGoalRate, UserProfileSex
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 from datetime import date as Date
 from decimal import Decimal
 
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from src.enums import (
+    UserProfileActivityLevel,
+    UserProfileSex,
+    UserProfileWeightGoalRate,
+)
+from src.models import User, UserProfile
+from src.schemas import UserProfileUpdate
+
 # # # # # # # # # # # # # # # # # # # # # # # # USERS # # # # # # # # # # # # # # # # # # # # # # # #
+
 
 def load_user_by_email(session: Session, email: str):
     stmt = select(User).where(User.email == email)
@@ -14,23 +21,21 @@ def load_user_by_email(session: Session, email: str):
     user = result.scalar_one_or_none()
     return user
 
-def create_user(session: Session,
-    email: str,
-    password_hash: str):
-    user = User(
-        email=email,
-        password_hash=password_hash
-    )
+
+def create_user(session: Session, email: str, password_hash: str):
+    user = User(email=email, password_hash=password_hash)
     session.add(user)
     session.commit()
     session.refresh(user)
     return user
+
 
 def load_user_by_id(session: Session, user_id: int):
     stmt = select(User).where(User.id == user_id)
     result = session.execute(stmt)
     user = result.scalar_one_or_none()
     return user
+
 
 def create_userprofile(
     sex: UserProfileSex,
@@ -40,8 +45,8 @@ def create_userprofile(
     activity_level: UserProfileActivityLevel,
     goal: UserProfileWeightGoalRate,
     session: Session,
-    user_id: int
-    ):
+    user_id: int,
+):
     userprofile = UserProfile(
         user_id=user_id,
         sex=sex,
@@ -49,12 +54,13 @@ def create_userprofile(
         weight=weight,
         birth_date=birth_date,
         activity_level=activity_level,
-        goal=goal
+        goal=goal,
     )
     session.add(userprofile)
     session.commit()
     session.refresh(userprofile)
     return userprofile
+
 
 def load_userprofile_by_user_id(session: Session, user_id: int):
     stmt = select(UserProfile).where(UserProfile.user_id == user_id)
@@ -62,7 +68,10 @@ def load_userprofile_by_user_id(session: Session, user_id: int):
     userprofile = result.scalar_one_or_none()
     return userprofile
 
-def update_userprofile(session: Session, user_id: int, userprofile_update: UserProfileUpdate):
+
+def update_userprofile(
+    session: Session, user_id: int, userprofile_update: UserProfileUpdate
+):
     userprofile = load_userprofile_by_user_id(session, user_id)
     if not userprofile:
         return False

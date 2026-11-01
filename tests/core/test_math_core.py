@@ -1,9 +1,25 @@
-import pytest
-from src.models import Product
-from src.enums import UserProfileSex, UserProfileActivityLevel, UserProfileWeightGoalRate
-from src.core.math_core import calculate_calories, calculate_portion, calculate_bmr, calculate_tdee, weightgoalratecalc, calculate_macro, calories_comparision, calculate_standard_portion
-from decimal import Decimal
 from datetime import date as Date
+from decimal import Decimal
+
+import pytest
+
+from src.core.math_core import (
+    calculate_bmr,
+    calculate_calories,
+    calculate_macro,
+    calculate_portion,
+    calculate_standard_portion,
+    calculate_tdee,
+    calories_comparision,
+    weightgoalratecalc,
+)
+from src.enums import (
+    UserProfileActivityLevel,
+    UserProfileSex,
+    UserProfileWeightGoalRate,
+)
+from src.models import Product
+
 
 @pytest.mark.parametrize(
     "protein, fat, carbs, expected",
@@ -11,20 +27,16 @@ from datetime import date as Date
         (10, 5, 20, 165),
         (0, 0, 0, 0),
         (10.11, 5.23, 20.236, 168.45),
-    ]
+    ],
 )
 def test_calculate_calories(protein, fat, carbs, expected):
     result = calculate_calories(protein, fat, carbs)
     assert result == expected
 
+
 def test_calculate_portion_default():
     product = Product(
-        name="Makaron",
-        protein=7,
-        fat=2,
-        carbs=70,
-        calories=350,
-        active=True
+        name="Makaron", protein=7, fat=2, carbs=70, calories=350, active=True
     )
     result = calculate_portion(product, weight=50)
     assert result["protein"] == 3.5
@@ -33,14 +45,10 @@ def test_calculate_portion_default():
     assert result["calories"] == 175.0
     assert result["weight"] == 50
 
+
 def test_calculate_portion_zero_values():
     product = Product(
-        name="Makaron",
-        protein=0,
-        fat=0,
-        carbs=0,
-        calories=0,
-        active=True
+        name="Makaron", protein=0, fat=0, carbs=0, calories=0, active=True
     )
     result = calculate_portion(product, weight=0)
     assert result["protein"] == 0
@@ -49,25 +57,20 @@ def test_calculate_portion_zero_values():
     assert result["calories"] == 0
     assert result["weight"] == 0
 
+
 def test_calculate_bmr_male():
-    result = calculate_bmr(
-        UserProfileSex.male,
-        Decimal("90.0"),
-        180,
-        Date(2003, 6, 25)
-    )
+    result = calculate_bmr(UserProfileSex.male, Decimal("90.0"), 180, Date(2003, 6, 25))
 
     assert result == 1915
 
+
 def test_calculate_bmr_female():
     result = calculate_bmr(
-        UserProfileSex.female,
-        Decimal("90.0"),
-        180,
-        Date(2003, 6, 25)
+        UserProfileSex.female, Decimal("90.0"), 180, Date(2003, 6, 25)
     )
 
     assert result == 1749
+
 
 def test_calculate_tdee():
     bmr = 2000
@@ -87,17 +90,18 @@ def test_calculate_tdee():
 @pytest.mark.parametrize(
     "factor, expected",
     [
-        (UserProfileWeightGoalRate.loss_0_1, Decimal("-110")),
-        (UserProfileWeightGoalRate.loss_0_2, Decimal("-220")),
-        (UserProfileWeightGoalRate.loss_0_3, Decimal("-330")),
-        (UserProfileWeightGoalRate.maintenance, Decimal("0")),
-        (UserProfileWeightGoalRate.gain_0_1, Decimal("110")),
-        (UserProfileWeightGoalRate.gain_0_2, Decimal("220")),
-        (UserProfileWeightGoalRate.gain_0_3, Decimal("330")),
-    ]
+        (UserProfileWeightGoalRate.loss_0_1, Decimal(-110)),
+        (UserProfileWeightGoalRate.loss_0_2, Decimal(-220)),
+        (UserProfileWeightGoalRate.loss_0_3, Decimal(-330)),
+        (UserProfileWeightGoalRate.maintenance, Decimal(0)),
+        (UserProfileWeightGoalRate.gain_0_1, Decimal(110)),
+        (UserProfileWeightGoalRate.gain_0_2, Decimal(220)),
+        (UserProfileWeightGoalRate.gain_0_3, Decimal(330)),
+    ],
 )
 def test_weightgoalratecalc(factor, expected):
     assert weightgoalratecalc(factor) == expected
+
 
 def test_calculate_macro():
     target_calories = 3000
@@ -111,34 +115,19 @@ def test_calculate_macro():
     assert calc["carbs_min"] == 338
     assert calc["carbs_max"] == 450
 
+
 @pytest.mark.parametrize(
     "target, eaten, expected",
     [
-        (3000, 2500, {
-            "remaining_calories": 500,
-            "exceeded_calories": 0
-        }),
-        (3000, 3000, {
-            "remaining_calories": 0,
-            "exceeded_calories": 0
-        }),
-        (3000, 3500, {
-            "remaining_calories": 0,
-            "exceeded_calories": 500
-        }),
-    ]
+        (3000, 2500, {"remaining_calories": 500, "exceeded_calories": 0}),
+        (3000, 3000, {"remaining_calories": 0, "exceeded_calories": 0}),
+        (3000, 3500, {"remaining_calories": 0, "exceeded_calories": 500}),
+    ],
 )
 def test_calories_comparision(target, eaten, expected):
     assert calories_comparision(target, eaten) == expected
 
-@pytest.mark.parametrize(
-    "target, expected",
-    [
-        (100, 1),
-        (250, 0.4),
-        (50, 2.0)
-    ]
-)
 
+@pytest.mark.parametrize("target, expected", [(100, 1), (250, 0.4), (50, 2.0)])
 def test_calculate_standard_portion(target, expected):
     assert calculate_standard_portion(target) == expected

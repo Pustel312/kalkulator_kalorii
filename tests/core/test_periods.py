@@ -1,7 +1,8 @@
-from src.enums import PeriodType
 from datetime import date as Date
+
 from src.core.periods import calculate_period
-import pytest
+from src.enums import PeriodType
+
 
 def test_calculate_period_day():
     today = Date.today()
@@ -9,6 +10,7 @@ def test_calculate_period_day():
 
     assert date_from == today
     assert date_to == today
+
 
 def test_calculate_period_week():
     data = Date(2026, 10, 31)
@@ -25,6 +27,7 @@ def test_calculate_period_month():
     assert date_from == Date(2026, 10, 1)
     assert date_to == Date(2026, 10, 31)
 
+
 def test_calculate_period_year():
 
     data = Date(2026, 10, 31)
@@ -32,6 +35,7 @@ def test_calculate_period_year():
 
     assert date_from == Date(2026, 1, 1)
     assert date_to == Date(2026, 12, 31)
+
 
 def test_calculate_period_week_between_years():
 
@@ -41,6 +45,7 @@ def test_calculate_period_week_between_years():
     assert date_from == Date(2026, 12, 28)
     assert date_to == Date(2027, 1, 3)
 
+
 def test_calculate_period_week_february():
 
     data = Date(2026, 2, 28)
@@ -48,6 +53,7 @@ def test_calculate_period_week_february():
 
     assert date_from == Date(2026, 2, 23)
     assert date_to == Date(2026, 3, 1)
+
 
 def test_calculate_period_week_february_leap_year():
 
@@ -57,6 +63,7 @@ def test_calculate_period_week_february_leap_year():
     assert date_from == Date(2028, 2, 28)
     assert date_to == Date(2028, 3, 5)
 
+
 def test_calculate_period_month_february():
 
     data = Date(2026, 2, 15)
@@ -64,6 +71,7 @@ def test_calculate_period_month_february():
 
     assert date_from == Date(2026, 2, 1)
     assert date_to == Date(2026, 2, 28)
+
 
 def test_calculate_period_month_february_leap_year():
 
