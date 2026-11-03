@@ -36,8 +36,7 @@ def create_product(
         active=True,
     )
     session.add(product)
-    session.commit()
-    session.refresh(product)
+    session.flush()
     return product
 
 
@@ -165,8 +164,7 @@ def create_component(
         weight=weight,
     )
     session.add(component)
-    session.commit()
-    session.refresh(component)
+    session.flush()
     return component
 
 

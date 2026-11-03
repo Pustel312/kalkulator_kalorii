@@ -53,21 +53,29 @@ def create_product_endpoint(
     calculated_calories = calculate_calories(
         protein=protein, fat=fat, carbohydrates=carbs
     )
-    created_product = create_product(
-        session=session,
-        name=product.name,
-        owner_id=current_user.id,
-        product_type=product.type,
-        protein=protein,
-        fat=fat,
-        carbs=carbs,
-        calories=calculated_calories,
-    )
-    if created_product is None:
-        raise HTTPException(
-            status_code=409, detail="Active product with this name already exists"
+    try:
+        created_product = create_product(
+            session=session,
+            name=product.name,
+            owner_id=current_user.id,
+            product_type=product.type,
+            protein=protein,
+            fat=fat,
+            carbs=carbs,
+            calories=calculated_calories,
         )
-    return created_product
+        if created_product is None:
+            session.rollback()
+            raise HTTPException(
+                status_code=409, detail="Active product with this name already exists"
+            )
+        session.commit()
+        return created_product
+    except HTTPException:
+        raise
+    except Exception:
+        session.rollback()
+        raise
 
 
 @router.get("/products", tags=["Products"], response_model=list[ProductResponse])
@@ -157,25 +165,35 @@ def create_composed_product_endpoint(
     macros = calculate_components_macro(
         product_list=product_list, components=product.components
     )
-    created_product = create_product(
-        session=session,
-        owner_id=current_user.id,
-        name=product.name,
-        product_type=product.type,
-        protein=macros["protein"],
-        fat=macros["fat"],
-        carbs=macros["carbs"],
-        calories=macros["calories"],
-    )
-
-    for component in product.components:
-        create_component(
+    try:
+        created_product = create_product(
             session=session,
-            parent_product_id=created_product.id,
-            component_product_id=component.product_id,
-            weight=component.weight,
+            owner_id=current_user.id,
+            name=product.name,
+            product_type=product.type,
+            protein=macros["protein"],
+            fat=macros["fat"],
+            carbs=macros["carbs"],
+            calories=macros["calories"],
         )
-    return created_product
+        if not created_product:
+            session.rollback()
+            raise HTTPException(status_code=409, detail="Product already exists!")
+
+        for component in product.components:
+            create_component(
+                session=session,
+                parent_product_id=created_product.id,
+                component_product_id=component.product_id,
+                weight=component.weight,
+            )
+        session.commit()
+        return created_product
+    except HTTPException:
+        raise
+    except Exception:
+        session.rollback()
+        raise
 
 
 @router.get(

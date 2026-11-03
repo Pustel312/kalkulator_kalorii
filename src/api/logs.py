@@ -27,19 +27,24 @@ def create_log_endpoint(
         raise HTTPException(status_code=404, detail="Product not found")
     portion_data = calculate_portion(product, dane.weight)
     data = Date.today()
-    created_log = create_log(
-        session=session,
-        user_id=current_user.id,
-        product_id=dane.product_id,
-        product_type=product.type,
-        weight=dane.weight,
-        protein=portion_data["protein"],
-        fat=portion_data["fat"],
-        carbs=portion_data["carbs"],
-        calories=portion_data["calories"],
-        date=data,
-    )
-    return created_log
+    try:
+        created_log = create_log(
+            session=session,
+            user_id=current_user.id,
+            product_id=dane.product_id,
+            product_type=product.type,
+            weight=dane.weight,
+            protein=portion_data["protein"],
+            fat=portion_data["fat"],
+            carbs=portion_data["carbs"],
+            calories=portion_data["calories"],
+            date=data,
+        )
+        session.commit()
+        return created_log
+    except Exception:
+        session.rollback()
+        raise
 
 
 @router.get("/logs/{entry_id}", response_model=LogResponse, tags=["Logs"])

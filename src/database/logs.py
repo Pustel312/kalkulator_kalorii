@@ -33,8 +33,7 @@ def create_log(
         date=date,
     )
     session.add(log)
-    session.commit()
-    session.refresh(log)
+    session.flush()
     return log
 
 
