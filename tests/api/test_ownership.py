@@ -6,6 +6,7 @@ from tests.helpers import (
     create_test_recipe,
     create_test_user,
     login_test_user,
+    create_test_component
 )
 
 
@@ -167,6 +168,38 @@ def test_not_own_product_change_visibility_blocked(clean_db):
     )
 
     assert visibility_response.status_code == 404
+
+def test_create_component_not_owned_product(clean_db):
+    headers1 = create_test_authorization("test1@example.com", "TestPassword123")
+    headers2 = create_test_authorization("test2@example.com", "TestPassword321")
+
+    create_response_product1 = create_test_product("Chilli con carne", 20, 10, 70, 100, headers1)
+    create_response_product2 = create_test_product("Tortilla", 10, 10, 80, 100, headers2)
+    product_id1 = create_response_product1.json()["id"]
+    product_id2 = create_response_product2.json()["id"]
+
+    create_response_component1 = create_test_component("Burrito", headers1, [{"product_id": product_id1, "weight": 200}, {"product_id": product_id2, "weight": 150}], "dish" )
+
+    assert create_response_component1.status_code == 404
+
+def test_create_component_same_name_different_owner(clean_db):
+    headers1 = create_test_authorization("test1@example.com", "TestPassword123")
+    headers2 = create_test_authorization("test2@example.com", "TestPassword321")
+
+    create_response_product1 = create_test_product("Chilli con carne", 20, 10, 70, 100, headers1)
+    create_response_product2 = create_test_product("Tortilla", 10, 10, 80, 100, headers1)
+    create_response_product3 = create_test_product("Chilli con carne", 20, 10, 70, 100, headers2)
+    create_response_product4 = create_test_product("Tortilla", 10, 10, 80, 100, headers2)
+    product_id1 = create_response_product1.json()["id"]
+    product_id2 = create_response_product2.json()["id"]
+    product_id3 = create_response_product3.json()["id"]
+    product_id4 = create_response_product4.json()["id"]
+
+    create_response_component1 = create_test_component("Burrito", headers1, [{"product_id": product_id1, "weight": 200}, {"product_id": product_id2, "weight": 150}], "dish" )
+    create_response_component2 = create_test_component("Burrito", headers2, [{"product_id": product_id3, "weight": 200}, {"product_id": product_id4, "weight": 150}], "dish" )
+
+    assert create_response_component1.status_code == 200
+    assert create_response_component2.status_code == 200
 
 
 def test_log_ownership(clean_db):
