@@ -27,55 +27,60 @@ from src.security import (
     verify_password,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["Users"])
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # USERS # # # # # # # # # # # # # # # # # # # # # # # #
-@router.post("/users/register", tags=["Users"], response_model=UserResponse)
+@router.post("/users/register", response_model=UserResponse)
 def user_create_endpoint(user: UserCreate, session: Session = Depends(get_db)):
     check_user = load_user_by_email(session=session, email=user.email)
     if check_user:
-        raise HTTPException(status_code=409, detail="Invalid email or password")
+        raise HTTPException(status_code=409, detail="Email already registered")
     hashed_password = hash_password(user.password)
-    new_user = create_user(
-        session=session, email=user.email, password_hash=hashed_password
-    )
-    return new_user
+    try:
+        new_user = create_user(
+            session=session, email=user.email, password_hash=hashed_password
+        )
+        session.commit()
+        return new_user
+    except Exception:
+        session.rollback()
+        raise
 
 
-@router.post("/users/login", tags=["Users"])
+@router.post("/users/login")
 def user_login_endpoint(user: UserLogin, session: Session = Depends(get_db)):
     check_user = load_user_by_email(session=session, email=user.email)
     if not check_user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    verifying = verify_password(user.password, check_user.password_hash)
-    if not verifying:
+    password_valid = verify_password(user.password, check_user.password_hash)
+    if not password_valid:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     access = create_access_token(check_user.id)
     refresh = create_refresh_token(check_user.id)
     return {"access_token": access, "refresh_token": refresh, "token_type": "bearer"}
 
 
-@router.get("/users/me", tags=["Users"], response_model=UserResponse)
+@router.get("/users/me", response_model=UserResponse)
 def get_current_user_endpoint(current_user: User = Depends(get_current_user)):
     return current_user
 
 
-@router.post("/users/token/access", tags=["Users"])
+@router.post("/users/token/access")
 def access_token_endpoint(
     form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_db)
 ):
     check_user = load_user_by_email(session=session, email=form_data.username)
     if not check_user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    verifying = verify_password(form_data.password, check_user.password_hash)
-    if not verifying:
+    password_valid = verify_password(form_data.password, check_user.password_hash)
+    if not password_valid:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     access_token = create_access_token(check_user.id)
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.post("/users/token/refresh", tags=["Users"])
+@router.post("/users/token/refresh")
 def refresh_token_endpoint(
     refresh_user: User = Depends(get_refresh_user),
 ):
@@ -83,7 +88,7 @@ def refresh_token_endpoint(
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.post("/users/me/profile", response_model=UserProfileResponse, tags=["Users"])
+@router.post("/users/me/profile", response_model=UserProfileResponse)
 def create_userprofile_endpoint(
     userprofile: UserProfileCreate,
     current_user: User = Depends(get_current_user),
@@ -94,20 +99,24 @@ def create_userprofile_endpoint(
     )
     if check_userprofile:
         raise HTTPException(status_code=409, detail="UserProfile already exist.")
-    new_userprofile = create_userprofile(
-        userprofile.sex,
-        userprofile.height,
-        userprofile.weight,
-        userprofile.birth_date,
-        userprofile.activity_level,
-        userprofile.goal,
-        session=session,
-        user_id=current_user.id,
-    )
-    return new_userprofile
+    try:
+        new_userprofile = create_userprofile(
+            session,
+            userprofile.sex,
+            userprofile.height,
+            userprofile.weight,
+            userprofile.birth_date,
+            userprofile.activity_level,
+            userprofile.goal,
+            current_user.id,
+        )
+        session.commit()
+        return new_userprofile
+    except Exception:
+        session.rollback()
+        raise
 
-
-@router.get("/users/me/profile", response_model=UserProfileResponse, tags=["Users"])
+@router.get("/users/me/profile", response_model=UserProfileResponse)
 def get_userprofile(
     session: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
@@ -117,15 +126,20 @@ def get_userprofile(
     return userprofile
 
 
-@router.patch("/users/me/profile", response_model=UserProfileResponse, tags=["Users"])
+@router.patch("/users/me/profile", response_model=UserProfileResponse)
 def update_userprofile_endpoint(
     userprofile_update: UserProfileUpdate,
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    updated_userprofile = update_userprofile(
-        session=session, user_id=current_user.id, userprofile_update=userprofile_update
-    )
-    if not updated_userprofile:
-        raise HTTPException(status_code=404, detail="UserProfile not found")
-    return updated_userprofile
+    try:
+        updated_userprofile = update_userprofile(
+            session=session, user_id=current_user.id, userprofile_update=userprofile_update
+        )
+        if not updated_userprofile:
+            raise HTTPException(status_code=404, detail="UserProfile not found")
+        session.commit()
+        return updated_userprofile
+    except Exception:
+        session.rollback()
+        raise

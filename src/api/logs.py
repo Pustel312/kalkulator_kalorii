@@ -11,34 +11,31 @@ from src.database.session import get_db
 from src.models import User
 from src.schemas import LogCreate, LogResponse
 
-router = APIRouter()
+router = APIRouter(tags=["Logs"])
 
-# # # # # # # # # # # # # # # # # # # # # # # # LOGS # # # # # # # # # # # # # # # # # # # # # # # #
-
-
-@router.post("/logs", tags=["Logs"], response_model=LogResponse)
+@router.post("/logs", response_model=LogResponse)
 def create_log_endpoint(
-    dane: LogCreate,
+    log_data: LogCreate,
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    product = load_products_by_id(session, dane.product_id, current_user.id)
+    product = load_products_by_id(session, log_data.product_id, current_user.id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    portion_data = calculate_portion(product, dane.weight)
-    data = Date.today()
+    portion_data = calculate_portion(product, log_data.weight)
+    current_date = Date.today()
     try:
         created_log = create_log(
             session=session,
             user_id=current_user.id,
-            product_id=dane.product_id,
+            product_id=log_data.product_id,
             product_type=product.type,
-            weight=dane.weight,
+            weight=log_data.weight,
             protein=portion_data["protein"],
             fat=portion_data["fat"],
             carbs=portion_data["carbs"],
             calories=portion_data["calories"],
-            date=data,
+            date=current_date,
         )
         session.commit()
         return created_log
@@ -47,7 +44,7 @@ def create_log_endpoint(
         raise
 
 
-@router.get("/logs/{entry_id}", response_model=LogResponse, tags=["Logs"])
+@router.get("/logs/{entry_id}", response_model=LogResponse)
 def get_log_by_id(
     entry_id: int,
     session: Session = Depends(get_db),
@@ -59,23 +56,28 @@ def get_log_by_id(
     return log
 
 
-@router.get("/logs", response_model=list[LogResponse], tags=["Logs"])
+@router.get("/logs", response_model=list[LogResponse])
 def get_logs_by_date(
     target_date: Date,
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    logs = load_log_by_date(target_date, session, current_user.id)
+    logs = load_log_by_date(session, target_date, current_user.id)
     return logs
 
 
-@router.delete("/logs/{entry_id}", tags=["Logs"])
+@router.delete("/logs/{entry_id}")
 def delete_logs_endpoint(
     entry_id: int,
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    deletedL = delete_log(session, entry_id, current_user.id)
-    if not deletedL:
-        raise HTTPException(status_code=404, detail="Log not found")
-    return {"status": "ok", "message": "Log is deleted"}
+    try:
+        deleted_log = delete_log(session, entry_id, current_user.id)
+        if not deleted_log:
+            raise HTTPException(status_code=404, detail="Log not found")
+        session.commit()
+        return {"status": "ok", "message": "Log is deleted"}
+    except Exception:
+        session.rollback()
+        raise

@@ -82,7 +82,7 @@ def load_owned_product_by_id(session: Session, product_id: int, owner_id: int):
     return product
 
 
-def search_products(phrase: str, session: Session, owner_id: int):
+def search_products(session: Session, phrase: str, owner_id: int):
     stmt = (
         select(Product)
         .where(Product.name.contains(phrase))
@@ -109,7 +109,7 @@ def update_product(
         product.calories = calculate_calories(
             product.protein, product.fat, product.carbs
         )
-    session.commit()
+    session.flush()
     return product
 
 
@@ -118,7 +118,7 @@ def delete_product(session: Session, product_id: int, owner_id: int):
     if not product:
         return False
     product.active = False
-    session.commit()
+    session.flush()
 
     return True
 
@@ -129,13 +129,12 @@ def change_product_visibility(
     product = load_owned_product_by_id(session, product_id, owner_id)
     if not product:
         return False
-    if is_global == True:
+    if is_global:
         for component in product.components:
             if not component.component_product.is_global:
                 return False
     product.is_global = is_global
-    session.commit()
-    session.refresh(product)
+    session.flush()
 
     return product
 
@@ -148,11 +147,11 @@ def load_components(session: Session, product_ids: list[int], owner_id: int):
         or_(Product.owner_id == owner_id, Product.is_global.is_(True)),
     )
     result = session.execute(stmt)
-    component = result.scalars().all()
-    loaded_ids = [product.id for product in component]
+    components = result.scalars().all()
+    loaded_ids = [product.id for product in components]
     if set(product_ids) != set(loaded_ids):
         return False
-    return component
+    return components
 
 
 def create_component(
@@ -169,7 +168,7 @@ def create_component(
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # RECIPES # # # # # # # # # # # # # # # # # # # # # # # #
-def load_recipe_by_product_id(owner_id: int, session: Session, product_id: int):
+def load_recipe_by_product_id(session: Session, owner_id: int, product_id: int):
     existing_product = load_owned_product_by_id(session, product_id, owner_id)
     if not existing_product:
         return None
@@ -189,7 +188,7 @@ def create_recipe(
     servings: int,
     preparation_time: int | None = None,
 ):
-    existing_recipe = load_recipe_by_product_id(owner_id, session, product_id)
+    existing_recipe = load_recipe_by_product_id(session, owner_id, product_id)
     if existing_recipe is None:
         return None
     if existing_recipe:
@@ -201,15 +200,14 @@ def create_recipe(
         preparation_time=preparation_time,
     )
     session.add(new_recipe)
-    session.commit()
-    session.refresh(new_recipe)
+    session.flush()
     return new_recipe
 
 
 def update_recipe(
-    owner_id: int, session: Session, recipe_update: ProductRecipeUpdate, product_id: int
+    session: Session, owner_id: int, recipe_update: ProductRecipeUpdate, product_id: int
 ):
-    existing_recipe = load_recipe_by_product_id(owner_id, session, product_id)
+    existing_recipe = load_recipe_by_product_id(session, owner_id, product_id)
     if existing_recipe is None:
         return None
     if not existing_recipe:
@@ -217,17 +215,16 @@ def update_recipe(
     update_data = recipe_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(existing_recipe, field, value)
-    session.commit()
-    session.refresh(existing_recipe)
+    session.flush()
     return existing_recipe
 
 
-def delete_recipe(owner_id: int, session: Session, product_id: int):
-    existing_recipe = load_recipe_by_product_id(owner_id, session, product_id)
+def delete_recipe(session: Session, owner_id: int, product_id: int):
+    existing_recipe = load_recipe_by_product_id(session, owner_id, product_id)
     if existing_recipe is None:
         return None
     if not existing_recipe:
         return False
     session.delete(existing_recipe)
-    session.commit()
+    session.flush()
     return True

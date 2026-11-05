@@ -87,12 +87,12 @@ def get_products(
 
 
 @router.get("/products/search", tags=["Products"], response_model=list[ProductResponse])
-def get_products_by_phrase(
+def search_products_endpoint(
     phrase: str,
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    products = search_products(phrase, session, current_user.id)
+    products = search_products(session, phrase, current_user.id)
     return products
 
 
@@ -105,45 +105,57 @@ def update_product_endpoint(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    updated_product = update_product(
-        session, product_id, product_update, current_user.id
-    )
-    if not updated_product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    return updated_product
-
+    try:
+        updated_product = update_product(
+            session, product_id, product_update, current_user.id
+        )
+        if not updated_product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        session.commit()
+        return updated_product
+    except Exception:
+        session.rollback()
+        raise
 
 @router.delete("/products/{product_id}", tags=["Products"])
-def delete_products(
+def delete_products_endpoint(
     product_id: int,
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    deleted = delete_product(session, product_id, current_user.id)
+    try:
+        deleted = delete_product(session, product_id, current_user.id)
 
-    if not deleted:
-        raise HTTPException(status_code=404, detail="Product not found")
-    return {"status": "ok", "message": "Product is deleted"}
-
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Product not found")
+        session.commit()
+        return {"status": "ok", "message": "Product is deleted"}
+    except Exception:
+        session.rollback()
+        raise
 
 @router.patch("/products/{product_id}/visibility", tags=["Products"])
-def change_is_global(
+def change_product_visibility_endpoint(
     product_id: int,
     is_global: bool,
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    global_or_private = change_product_visibility(
-        session=session,
-        product_id=product_id,
-        is_global=is_global,
-        owner_id=current_user.id,
-    )
+    try:
+        updated_product = change_product_visibility(
+            session=session,
+            product_id=product_id,
+            is_global=is_global,
+            owner_id=current_user.id,
+        )
 
-    if not global_or_private:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    return global_or_private
+        if not updated_product:
+            raise HTTPException(status_code=404, detail="Product not found")
+        session.commit()
+        return updated_product
+    except Exception:
+        session.rollback()
+        raise
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # COMPONENTS # # # # # # # # # # # # # # # # # # # # # # # #
@@ -155,10 +167,7 @@ def create_composed_product_endpoint(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    product_ids = []
-    for component in product.components:
-        product_id = component.product_id
-        product_ids.append(product_id)
+    product_ids = [component.product_id for component in product.components]
     product_list = load_components(session, product_ids, current_user.id)
     if not product_list:
         raise HTTPException(status_code=404, detail="One or more components not found")
@@ -178,7 +187,7 @@ def create_composed_product_endpoint(
         )
         if not created_product:
             session.rollback()
-            raise HTTPException(status_code=409, detail="Product already exists!")
+            raise HTTPException(status_code=409, detail="Active product with this name already exists")
 
         for component in product.components:
             create_component(
@@ -232,20 +241,24 @@ def create_recipe_endpoint(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    created_recipe = create_recipe(
-        session=session,
-        owner_id=current_user.id,
-        product_id=recipe.product_id,
-        recipe=recipe.recipe,
-        servings=recipe.servings,
-        preparation_time=recipe.preparation_time,
-    )
-    if created_recipe is None:
-        raise HTTPException(status_code=404, detail="Product do not exist")
-    if not created_recipe:
-        raise HTTPException(status_code=409, detail="Product already have recipe!")
-    return created_recipe
-
+    try:
+        created_recipe = create_recipe(
+            session=session,
+            owner_id=current_user.id,
+            product_id=recipe.product_id,
+            recipe=recipe.recipe,
+            servings=recipe.servings,
+            preparation_time=recipe.preparation_time,
+        )
+        if created_recipe is None:
+            raise HTTPException(status_code=404, detail="Product not found")
+        if not created_recipe:
+            raise HTTPException(status_code=409, detail="Product already has recipe")
+        session.commit()
+        return created_recipe
+    except Exception:
+        session.rollback()
+        raise
 
 @router.get("/recipes", response_model=ProductRecipeResponse, tags=["Recipes"])
 def get_recipe_endpoint(
@@ -253,30 +266,34 @@ def get_recipe_endpoint(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    existing_recipe = load_recipe_by_product_id(current_user.id, session, product_id)
+    existing_recipe = load_recipe_by_product_id(session, current_user.id, product_id)
     if existing_recipe is None:
-        raise HTTPException(status_code=404, detail="Product do not exist")
+        raise HTTPException(status_code=404, detail="Product not found")
     if not existing_recipe:
-        raise HTTPException(status_code=404, detail="Product do not have recipe!")
+        raise HTTPException(status_code=404, detail="Product has no recipe")
     return existing_recipe
 
 
 @router.patch("/recipes", response_model=ProductRecipeResponse, tags=["Recipes"])
 def update_recipe_endpoint(
     product_id: int,
-    update_recipe_arg: ProductRecipeUpdate,
+    recipe_update: ProductRecipeUpdate,
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    updated_recipe = update_recipe(
-        current_user.id, session, update_recipe_arg, product_id
-    )
-    if updated_recipe is None:
-        raise HTTPException(status_code=404, detail="Product do not exist")
-    if not updated_recipe:
-        raise HTTPException(status_code=404, detail="Product do not have recipe!")
-    return updated_recipe
-
+    try:
+        updated_recipe = update_recipe(
+            session, current_user.id,recipe_update, product_id
+        )
+        if updated_recipe is None:
+            raise HTTPException(status_code=404, detail="Product not found")
+        if not updated_recipe:
+            raise HTTPException(status_code=404, detail="Product has no recipe")
+        session.commit()
+        return updated_recipe
+    except Exception:
+        session.rollback()
+        raise
 
 @router.delete("/recipes", tags=["Recipes"])
 def delete_recipe_endpoint(
@@ -284,9 +301,14 @@ def delete_recipe_endpoint(
     session: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    deleted_recipe = delete_recipe(current_user.id, session, product_id)
-    if deleted_recipe is None:
-        raise HTTPException(status_code=404, detail="Product do not exist")
-    if not deleted_recipe:
-        raise HTTPException(status_code=404, detail="Product do not have recipe!")
-    return {"status": "ok", "message": "Recipe is deleted"}
+    try:
+        deleted_recipe = delete_recipe(session, current_user.id, product_id)
+        if deleted_recipe is None:
+            raise HTTPException(status_code=404, detail="Product not found")
+        if not deleted_recipe:
+            raise HTTPException(status_code=404, detail="Product has no recipe")
+        session.commit()
+        return {"status": "ok", "message": "Recipe is deleted"}
+    except Exception:
+        session.rollback()
+        raise

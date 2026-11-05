@@ -44,9 +44,9 @@ def load_log_by_id(session: Session, log_id: int, user_id: int):
     return log
 
 
-def load_log_by_date(date: Date, session: Session, user_id: int):
-    smtm = select(Log).where(Log.date == date, Log.user_id == user_id)
-    result = session.execute(smtm)
+def load_log_by_date(session: Session, date: Date, user_id: int):
+    stmt = select(Log).where(Log.date == date, Log.user_id == user_id)
+    result = session.execute(stmt)
     logs = result.scalars().all()
     return logs
 
@@ -58,5 +58,5 @@ def delete_log(session: Session, log_id: int, user_id: int):
     if not log:
         return False
     session.delete(log)
-    session.commit()
+    session.flush()
     return True

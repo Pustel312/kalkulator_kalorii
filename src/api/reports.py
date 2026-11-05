@@ -25,12 +25,12 @@ from src.enums import PeriodType
 from src.models import User
 from src.schemas import AvgWeightReport, PeriodReport, Top3Report
 
-router = APIRouter()
+router = APIRouter(tags=["Reports"])
 
 # # # # # # # # # # # # # # # # # # # # # # # # REPORTS # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-@router.get("/reports/period-summary", response_model=PeriodReport, tags=["Reports"])
+@router.get("/reports/period-summary", response_model=PeriodReport)
 def sum_period_endpoint(
     target_date: Date,
     period: PeriodType,
@@ -39,10 +39,10 @@ def sum_period_endpoint(
 ):
     date_from, date_to = calculate_period(period, target_date)
     days = calculate_days(date_from, date_to)
-    raport = sum_day(date_from, date_to, session, current_user.id)
-    days_without_logs = days - raport["days_with_logs"]
-    if raport["days_with_logs"] > 0:
-        avg_calories_per_logged_day = int(raport["calories"] / raport["days_with_logs"])
+    report = sum_day(session, date_from, date_to, current_user.id)
+    days_without_logs = days - report["days_with_logs"]
+    if report["days_with_logs"] > 0:
+        avg_calories_per_logged_day = int(report["calories"] / report["days_with_logs"])
     else:
         avg_calories_per_logged_day = 0
     userprofile = load_userprofile_by_user_id(session=session, user_id=current_user.id)
@@ -55,7 +55,7 @@ def sum_period_endpoint(
     daily_change = weightgoalratecalc(userprofile.goal)
     target_calories = daily_calories(tdee, daily_change)
     macros = calculate_macro(target_calories)
-    calories = calories_comparision(target_calories * days, raport["calories"])
+    calories = calories_comparision(target_calories * days, report["calories"])
     return {
         "period": period,
         "date_from": date_from,
@@ -67,21 +67,21 @@ def sum_period_endpoint(
         "exceeded_calories": calories["exceeded_calories"],
         "protein_min": macros["protein_min"] * days,
         "protein_max": macros["protein_max"] * days,
-        "protein_eaten": raport["protein"],
+        "protein_eaten": report["protein"],
         "fat_min": macros["fat_min"] * days,
         "fat_max": macros["fat_max"] * days,
-        "fat_eaten": raport["fat"],
+        "fat_eaten": report["fat"],
         "carbs_min": macros["carbs_min"] * days,
         "carbs_max": macros["carbs_max"] * days,
-        "carbs_eaten": raport["carbs"],
-        "log_count": raport["log_count"],
-        "days_with_logs": raport["days_with_logs"],
+        "carbs_eaten": report["carbs"],
+        "log_count": report["log_count"],
+        "days_with_logs": report["days_with_logs"],
         "days_without_logs": days_without_logs,
         "avg_calories_per_logged_day": avg_calories_per_logged_day,
     }
 
 
-@router.get("/report/top", response_model=list[Top3Report], tags=["Reports"])
+@router.get("/reports/top", response_model=list[Top3Report])
 def report_top_eaten_products_endpoint(
     session: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
@@ -89,7 +89,7 @@ def report_top_eaten_products_endpoint(
     return report
 
 
-@router.get("/report/avg", response_model=list[AvgWeightReport], tags=["Reports"])
+@router.get("/reports/avg", response_model=list[AvgWeightReport])
 def report_average_weight_of_log_endpoint(
     session: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):

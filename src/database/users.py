@@ -25,8 +25,7 @@ def load_user_by_email(session: Session, email: str):
 def create_user(session: Session, email: str, password_hash: str):
     user = User(email=email, password_hash=password_hash)
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    session.flush()
     return user
 
 
@@ -38,14 +37,14 @@ def load_user_by_id(session: Session, user_id: int):
 
 
 def create_userprofile(
+    session: Session,
     sex: UserProfileSex,
     height: int,
     weight: Decimal,
     birth_date: Date,
     activity_level: UserProfileActivityLevel,
     goal: UserProfileWeightGoalRate,
-    session: Session,
-    user_id: int,
+    user_id: int
 ):
     userprofile = UserProfile(
         user_id=user_id,
@@ -57,8 +56,7 @@ def create_userprofile(
         goal=goal,
     )
     session.add(userprofile)
-    session.commit()
-    session.refresh(userprofile)
+    session.flush()
     return userprofile
 
 
@@ -78,6 +76,5 @@ def update_userprofile(
     update_data = userprofile_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(userprofile, field, value)
-    session.commit()
-    session.refresh(userprofile)
+    session.flush()
     return userprofile

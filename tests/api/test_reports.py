@@ -190,8 +190,8 @@ def test_top_and_average_products(clean_db):
     create_test_log(product_id3, 1004, headers)
     create_test_log(product_id4, 1535, headers)
 
-    top_response = client.get("/report/top", headers=headers)
-    avg_response = client.get("report/avg", headers=headers)
+    top_response = client.get("/reports/top", headers=headers)
+    avg_response = client.get("reports/avg", headers=headers)
     data_top = top_response.json()
     data_avg = avg_response.json()
 

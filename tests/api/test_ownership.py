@@ -334,10 +334,10 @@ def test_reports_ownership_top_and_avg(clean_db):
     create_test_log(product_id2, 1735, headers2)
     create_test_log(product_id3, 4362, headers2)
 
-    top_response1 = client.get("/report/top", headers=headers1)
-    avg_response1 = client.get("report/avg", headers=headers1)
-    top_response2 = client.get("/report/top", headers=headers2)
-    avg_response2 = client.get("report/avg", headers=headers2)
+    top_response1 = client.get("/reports/top", headers=headers1)
+    avg_response1 = client.get("reports/avg", headers=headers1)
+    top_response2 = client.get("/reports/top", headers=headers2)
+    avg_response2 = client.get("reports/avg", headers=headers2)
 
     data_top1 = top_response1.json()
     data_avg1 = avg_response1.json()

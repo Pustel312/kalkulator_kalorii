@@ -9,8 +9,8 @@ from src.schemas import AvgWeightReport, Top3Report
 # # # # # # # # # # # # # # # # # # # # # # # # REPORTS # # # # # # # # # # # # # # # # # # # # # # # #
 
 
-def sum_day(date_from: Date, date_to: Date, session: Session, user_id: int):
-    result = select(
+def sum_day(session: Session, date_from: Date, date_to: Date, user_id: int):
+    stmt = select(
         func.coalesce(func.sum(Log.calories), 0),
         func.coalesce(func.sum(Log.protein), 0),
         func.coalesce(func.sum(Log.fat), 0),
@@ -19,7 +19,7 @@ def sum_day(date_from: Date, date_to: Date, session: Session, user_id: int):
         func.count(func.distinct(Log.date)),
     ).where(Log.date.between(date_from, date_to), Log.user_id == user_id)
     calories, protein, fat, carbs, log_count, days_with_logs = session.execute(
-        result
+        stmt
     ).one()
     return {
         "calories": calories,
@@ -35,8 +35,8 @@ def report_top_eaten_products(session: Session, user_id: int):
     stmt = (
         select(
             Product.name,
-            func.count(Log.product_id).label("liczba_logow"),
-            func.sum(Log.weight).label("suma_wagi"),
+            func.count(Log.product_id).label("number_of_logs"),
+            func.sum(Log.weight).label("weight_sum"),
         )
         .join(Product, Log.product_id == Product.id)
         .where(Log.user_id == user_id)
@@ -59,8 +59,8 @@ def report_average_weight_of_log(session: Session, user_id: int):
     stmt = (
         select(
             Product.name,
-            func.count(Log.id).label("liczba_logow"),
-            func.avg(Log.weight).label("srednia_waga"),
+            func.count(Log.id).label("number_of_logs"),
+            func.avg(Log.weight).label("weight_avg"),
         )
         .join(Product, Log.product_id == Product.id)
         .where(Log.user_id == user_id)
