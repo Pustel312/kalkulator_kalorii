@@ -55,6 +55,7 @@ class Product(Base):
 
     # P from Products for args
     __table_args__ = (
+        CheckConstraint("length(name) >= 1", name="Pname_not_empty"),
         CheckConstraint("protein >= 0", name="Pprotein_nonnegative"),
         CheckConstraint("fat >= 0", name="Pfat_nonnegative"),
         CheckConstraint("carbs >= 0", name="Pcarbs_nonnegative"),
@@ -103,6 +104,11 @@ class ProductRecipe(Base):
     servings: Mapped[int]
     preparation_time: Mapped[int | None] = mapped_column(default=None, nullable=True)
 
+    __table_args__ = (
+        CheckConstraint("length(recipe) >= 1", name="PRrecipe_is_not_empty"),
+        CheckConstraint("servings > 0", name="PRservings_higher_than_zero"),
+        CheckConstraint("preparation_time >= 0", name="PRpreparation_time_nonnegative"),
+    )
 
 class Log(Base):
     __tablename__ = "logs"
@@ -156,7 +162,7 @@ class UserProfile(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
-    sex: Mapped[UserProfileSex] = mapped_column(SqlEnum(UserProfileSex, name="sex"))
+    sex: Mapped[UserProfileSex] = mapped_column(SqlEnum(UserProfileSex, name="sex"), nullable=False)
     height: Mapped[int] = mapped_column(nullable=False)
     weight: Mapped[Decimal] = mapped_column(Numeric(4, 1), nullable=False)
     birth_date: Mapped[Date]
@@ -172,3 +178,8 @@ class UserProfile(Base):
     )
 
     user: Mapped["User"] = relationship(back_populates="userprofile")
+
+    __table_args__ = (
+        CheckConstraint("height BETWEEN 100 AND 300", name="UPheight_range"),
+        CheckConstraint("weight BETWEEN 30 AND 400", name="UPweight_range"),
+    )

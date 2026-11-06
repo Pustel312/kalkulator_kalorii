@@ -16,29 +16,29 @@ from src.enums import (
 
 
 class ProductCreate(BaseModel):
-    name: str = Field(..., min_length=1, description="Nazwa produktu")
-    type: ProductType = Field(..., description="Typ produktu")
-    protein: float = Field(..., ge=0, description="Białko(>=0)")
-    fat: float = Field(..., ge=0, description="Tłuszcze(>=0)")
-    carbs: float = Field(..., ge=0, description="Węglowodany(>=0)")
-    weight: float = Field(..., gt=0, description="Waga produktu")
+    name: str = Field(..., min_length=1, description="Product name")
+    type: ProductType = Field(..., description="Product type")
+    protein: float = Field(..., ge=0, description="Protein(>=0)")
+    fat: float = Field(..., ge=0, description="Fat(>=0)")
+    carbs: float = Field(..., ge=0, description="Carbs(>=0)")
+    weight: float = Field(..., gt=0, description="Product weight")
 
 
 class ProductResponse(BaseModel):
-    name: str = Field(..., min_length=1, description="Nazwa produktu")
-    type: ProductType = Field(..., description="Typ produktu")
-    protein: float = Field(..., ge=0, description="Białko w 100g (>=0)")
-    fat: float = Field(..., ge=0, description="Tłuszcze w 100g (>=0)")
-    carbs: float = Field(..., ge=0, description="Węglowodany w 100g (>=0)")
+    name: str = Field(..., min_length=1, description="Product name")
+    type: ProductType = Field(..., description="Product type")
+    protein: float = Field(..., ge=0, description="Protein in 100g (>=0)")
+    fat: float = Field(..., ge=0, description="Fat in 100g (>=0)")
+    carbs: float = Field(..., ge=0, description="Carbs in 100g (>=0)")
     id: int
-    calories: float
+    calories: float = Field(..., ge=0, description="Calories in 100g")
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class ProductUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1, description="Nazwa produktu")
-    type: ProductType | None = None
+    name: str | None = Field(default=None, min_length=1, description="Product name")
+    type: ProductType | None = Field(default=None, description="Product type")    
     protein: float | None = Field(default=None, ge=0)
     fat: float | None = Field(default=None, ge=0)
     carbs: float | None = Field(default=None, ge=0)
@@ -49,28 +49,28 @@ class ProductUpdate(BaseModel):
 
 class ProductComponentCreate(BaseModel):
     product_id: int
-    weight: float = Field(..., gt=0, description="Waga komponentu")
+    weight: float = Field(..., gt=0, description="Component weight")
 
 
 class ProductCreateComposed(BaseModel):
-    name: str = Field(..., min_length=1, description="Nazwa produktu")
-    type: ProductType = Field(..., description="Typ produktu")
+    name: str = Field(..., min_length=1, description="Product name")
+    type: ProductType = Field(..., description="Product type")
     components: list[ProductComponentCreate] = Field(
-        ..., min_length=1, description="Komponenty"
+        ..., min_length=1, description="Components"
     )
 
 
 class ProductComponentDetails(BaseModel):
     product_id: int
-    name: str
-    weight: float
+    name: str = Field(..., min_length=1, description="Product name")
+    weight: float = Field(..., gt=0, description="Component weight")
 
 
 class ProductComponentResult(BaseModel):
     id: int
-    name: str = Field(..., min_length=1, description="Nazwa produktu")
+    name: str = Field(..., min_length=1, description="Product name")
     components: list[ProductComponentDetails] = Field(
-        ..., min_length=1, description="Komponenty"
+        ..., min_length=1, description="Components"
     )
 
 
@@ -91,8 +91,8 @@ class ProductRecipeResponse(ProductRecipeCreate):
 
 
 class ProductRecipeUpdate(BaseModel):
-    recipe: str = Field(default=None, min_length=1)
-    servings: int = Field(default=None, gt=0)
+    recipe: str | None = Field(default=None, min_length=1)
+    servings: int | None = Field(default=None, gt=0)
     preparation_time: int | None = Field(default=None, ge=0)
 
 
@@ -100,18 +100,19 @@ class ProductRecipeUpdate(BaseModel):
 
 
 class LogCreate(BaseModel):
-    product_id: int = Field(..., ge=0, description="Id produktu")
-    weight: float = Field(..., ge=0, description="Waga produktu")
+    product_id: int = Field(..., gt=0, description="Product id")
+    weight: float = Field(..., gt=0, description="Product weight")
 
 
 class LogResponse(BaseModel):
     id: int
-    product_type: ProductType
-    protein: float
-    fat: float
-    carbs: float
-    calories: float
+    product_type: ProductType = Field(..., description="Product type")
+    protein: float = Field(..., ge=0, description="Protein")
+    fat: float = Field(..., ge=0, description="Fat")
+    carbs: float = Field(..., ge=0, description="Carbs")
+    calories: float = Field(..., ge=0, description="Calories")
     date: Date
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -123,75 +124,59 @@ class PeriodReport(BaseModel):
     date_from: Date
     date_to: Date
 
-    bmr: int
-    tdee: int
+    bmr: int = Field(..., ge=0, description="User BMR")  
+    tdee: int = Field(..., ge=0, description="User TDEE") 
 
-    target_calories: int
-    remaining_calories: int
-    exceeded_calories: int
+    target_calories: int = Field(..., ge=0, description="User target calories")
+    remaining_calories: int = Field(..., ge=0, description="Remaining calories for user")
+    exceeded_calories: int = Field(..., ge=0, description="Exceeded by user calories")
 
-    protein_min: int
-    protein_max: int
-    protein_eaten: float
-    fat_min: int
-    fat_max: int
-    fat_eaten: float
-    carbs_min: int
-    carbs_max: int
-    carbs_eaten: float
+    protein_min: int = Field(..., ge=0, description="Minimum user proteins")
+    protein_max: int = Field(..., ge=0, description="Maximum user proteins")
+    protein_eaten: float = Field(..., ge=0, description="Proteins eaten by user")
+    fat_min: int = Field(..., ge=0, description="Minimum user fat")
+    fat_max: int = Field(..., ge=0, description="Maximum user fat")
+    fat_eaten: float = Field(..., ge=0, description="Fat eaten by user")
+    carbs_min: int = Field(..., ge=0, description="Minimum user carbs")
+    carbs_max: int = Field(..., ge=0, description="Maximum user carbs")
+    carbs_eaten: float = Field(..., ge=0, description="Carbs eaten by user")
 
-    log_count: int
-    days_with_logs: int
-    days_without_logs: int
-    avg_calories_per_logged_day: int
+    log_count: int = Field(..., ge=0, description="Number of counted logs")
+    days_with_logs: int = Field(..., ge=0, description="Days with logs")
+    days_without_logs: int = Field(..., ge=0, description="Days without logs")
+    avg_calories_per_logged_day: int = Field(..., ge=0, description="Average calories logged per day")
 
 
 class Top3Report(BaseModel):
-    name: str
-    number_of_logs: int
-    weight_sum: float
+    name: str = Field(..., min_length=1, description="Product name")
+    number_of_logs: int = Field(..., ge=0, description="Number of logs")
+    weight_sum: float = Field(..., ge=0, description="Sum of total weight")
 
 
 class AvgWeightReport(BaseModel):
-    name: str
-    number_of_logs: int
-    weight_avg: float
-
-
-class PeriodSummary(BaseModel):
-    period: PeriodType
-    date_from: Date
-    date_to: Date
-
-    protein_min: int
-    protein_max: int
-    protein_eaten: float
-    fat_min: int
-    fat_max: int
-    fat_eaten: float
-    carbs_min: int
-    carbs_max: int
-    carbs_eaten: float
+    name: str = Field(..., min_length=1, description="Product name")
+    number_of_logs: int = Field(..., ge=0, description="Number of logs")
+    weight_avg: float = Field(..., ge=0, description="Average weight of logged product")
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # USERS # # # # # # # # # # # # # # # # # # # # # # # #
 
 
 class UserCreate(BaseModel):
-    email: EmailStr
-    password: str = Field(..., min_length=8)
+    email: EmailStr = Field(..., description="User email address")
+    password: str = Field(..., min_length=8, description="Password")
 
 
 class UserResponse(BaseModel):
     id: int
-    email: str
-    active: bool
-    created_at: datetime
+    email: EmailStr = Field(..., description="User email address")
+    active: bool = Field(..., description="Account activity status")
+    created_at: datetime = Field(..., description="Date of creation")
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
+    email: EmailStr = Field(..., description="User email address")
+    password: str = Field(..., description="Password")
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # USERPROFILES # # # # # # # # # # # # # # # # # # # # # # # #
@@ -212,9 +197,9 @@ class UserProfileCreate(BaseModel):
 
 class UserProfileResponse(BaseModel):
     user_id: int
-    sex: UserProfileSex
-    height: int
-    weight: Decimal
+    sex: UserProfileSex = Field(..., description="Gender of person")
+    height: int = Field(..., ge=100, le=300)
+    weight: Decimal = Field(..., ge=30, le=400)
     birth_date: Date
     activity_level: UserProfileActivityLevel
     goal: UserProfileWeightGoalRate
