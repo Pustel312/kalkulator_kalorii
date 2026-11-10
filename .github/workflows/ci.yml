@@ -1,0 +1,27 @@
+name: Backend CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  Backend-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirments.txt
+
+      - name: Check code with Ruff
+        run: ruff check .
+
+      - name: Run tests
+        run: python -m pytest

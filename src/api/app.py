@@ -6,7 +6,8 @@ from src.api.reports import router as reports_router
 from src.api.users import router as users_router
 
 app = FastAPI(
-    title="Kalkulator kalorii API", description="REST API do zarządzania produktami, posiłkami, dziennikiem żywieniowym i raportami."
+    title="Kalkulator kalorii API",
+    description="REST API do zarządzania produktami, posiłkami, dziennikiem żywieniowym i raportami.",
 )
 
 app.include_router(products_router)

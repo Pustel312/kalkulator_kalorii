@@ -1,12 +1,14 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
+
 from tests.common import client
 from tests.helpers import (
     create_test_authorization,
+    create_test_component,
     create_test_log,
     create_test_product,
     create_test_recipe,
-    create_test_component
 )
 
 # # # # # # # # # # # # # # # # # # # # # # # # PRODUCTS TESTS # # # # # # # # # # # # # # # # # # # # # # # #
@@ -125,9 +127,7 @@ def test_update_nonnegative(clean_db):
 
 def test_update_nonexisting(clean_db):
     headers = create_test_authorization()
-    response_update = client.patch(
-        "/products/1", headers=headers, json={"protein": 12}
-    )
+    response_update = client.patch("/products/1", headers=headers, json={"protein": 12})
 
     assert response_update.status_code == 404
 
@@ -154,7 +154,9 @@ def test_product_macros_calculations(clean_db):
     assert data["carbs"] == 40
     assert data["calories"] == 330
 
+
 # # # # # # # # # # # # # # # # # # # # # # # # COMPONENTS TESTS # # # # # # # # # # # # # # # # # # # # # # # #
+
 
 def test_create_component(clean_db):
     headers = create_test_authorization()
@@ -164,80 +166,122 @@ def test_create_component(clean_db):
 
     response = client.post(
         "/components/composed",
-        headers = headers,
+        headers=headers,
         json={
             "name": "testParent1",
             "type": "product",
-            "components": [
-                {
-                    "product_id": product_id1,
-                    "weight": 200
-                }
-            ]
-        }
+            "components": [{"product_id": product_id1, "weight": 200}],
+        },
     )
 
     assert response.status_code == 200
 
-def test_create_component_multiple_comps(clean_db):
-    headers=create_test_authorization()
 
-    create_response_product1 = create_test_product("Chilli con carne", 20, 10, 70, 100, headers)
+def test_create_component_multiple_comps(clean_db):
+    headers = create_test_authorization()
+
+    create_response_product1 = create_test_product(
+        "Chilli con carne", 20, 10, 70, 100, headers
+    )
     create_response_product2 = create_test_product("Tortilla", 10, 10, 80, 100, headers)
     product_id1 = create_response_product1.json()["id"]
     product_id2 = create_response_product2.json()["id"]
 
-    create_response_component = create_test_component("Burrito", headers, [{"product_id": product_id1, "weight": 200}, {"product_id": product_id2, "weight": 150}], "dish" )
+    create_response_component = create_test_component(
+        "Burrito",
+        headers,
+        [
+            {"product_id": product_id1, "weight": 200},
+            {"product_id": product_id2, "weight": 150},
+        ],
+        "dish",
+    )
 
     assert create_response_component.status_code == 200
 
-def test_create_component_nonexisting_product(clean_db):
-    headers=create_test_authorization()
 
-    create_response_product1 = create_test_product("Chilli con carne", 20, 10, 70, 100, headers)
+def test_create_component_nonexisting_product(clean_db):
+    headers = create_test_authorization()
+
+    create_response_product1 = create_test_product(
+        "Chilli con carne", 20, 10, 70, 100, headers
+    )
     product_id1 = create_response_product1.json()["id"]
 
-    create_response_component = create_test_component("Burrito", headers, [{"product_id": product_id1, "weight": 200}, {"product_id": 2, "weight": 150}], "dish" )
+    create_response_component = create_test_component(
+        "Burrito",
+        headers,
+        [{"product_id": product_id1, "weight": 200}, {"product_id": 2, "weight": 150}],
+        "dish",
+    )
 
     assert create_response_component.status_code == 404
 
-def test_create_component_already_existing_name(clean_db):
-    headers=create_test_authorization()
 
-    create_response_product1 = create_test_product("Chilli con carne", 20, 10, 70, 100, headers)
+def test_create_component_already_existing_name(clean_db):
+    headers = create_test_authorization()
+
+    create_response_product1 = create_test_product(
+        "Chilli con carne", 20, 10, 70, 100, headers
+    )
     create_response_product2 = create_test_product("Tortilla", 10, 10, 80, 100, headers)
     product_id1 = create_response_product1.json()["id"]
     product_id2 = create_response_product2.json()["id"]
 
-    create_response_component1 = create_test_component("Burrito", headers, [{"product_id": product_id1, "weight": 200}, {"product_id": product_id2, "weight": 150}], "dish" )
-    create_response_component2 = create_test_component("Burrito", headers, [{"product_id": product_id1, "weight": 200}, {"product_id": product_id2, "weight": 150}], "dish" )
+    create_response_component1 = create_test_component(
+        "Burrito",
+        headers,
+        [
+            {"product_id": product_id1, "weight": 200},
+            {"product_id": product_id2, "weight": 150},
+        ],
+        "dish",
+    )
+    create_response_component2 = create_test_component(
+        "Burrito",
+        headers,
+        [
+            {"product_id": product_id1, "weight": 200},
+            {"product_id": product_id2, "weight": 150},
+        ],
+        "dish",
+    )
 
     assert create_response_component1.status_code == 200
     assert create_response_component2.status_code == 409
 
+
 def test_create_component_atomicity_check(clean_db):
 
-    headers=create_test_authorization()
+    headers = create_test_authorization()
 
-    create_response_product1 = create_test_product("Chilli con carne", 20, 10, 70, 100, headers)
+    create_response_product1 = create_test_product(
+        "Chilli con carne", 20, 10, 70, 100, headers
+    )
     create_response_product2 = create_test_product("Tortilla", 10, 10, 80, 100, headers)
     product_id1 = create_response_product1.json()["id"]
     product_id2 = create_response_product2.json()["id"]
 
     with patch(
         "src.api.products.create_component",
-        side_effect=[None, ValueError("Simulated error")]
-    ):
-        with pytest.raises(ValueError, match="Simulated error"):
-            create_test_component("Burrito", headers, [{"product_id": product_id1, "weight": 200}, {"product_id": product_id2, "weight": 150}], "dish" )
+        side_effect=[None, ValueError("Simulated error")],
+    ), pytest.raises(ValueError, match="Simulated error"):
+        create_test_component(
+            "Burrito",
+            headers,
+            [
+                {"product_id": product_id1, "weight": 200},
+                {"product_id": product_id2, "weight": 150},
+            ],
+            "dish",
+        )
 
     response = client.get("/products", headers=headers)
 
     assert response.status_code == 200
-    assert not any(
-        product["name"] == "Burrito"
-        for product in response.json()
-)
+    assert not any(product["name"] == "Burrito" for product in response.json())
+
+
 # # # # # # # # # # # # # # # # # # RECIPES TESTS # # # # # # # # # # # # # # # # # # # # # # # #
 
 

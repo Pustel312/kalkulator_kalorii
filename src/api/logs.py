@@ -13,6 +13,7 @@ from src.schemas import LogCreate, LogResponse
 
 router = APIRouter(tags=["Logs"])
 
+
 @router.post("/logs", response_model=LogResponse)
 def create_log_endpoint(
     log_data: LogCreate,

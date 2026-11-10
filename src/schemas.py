@@ -37,11 +37,11 @@ class ProductResponse(BaseModel):
 
 
 class ProductUpdate(BaseModel):
-    name: str | None = Field(default=None, min_length=1, description="Product name")
-    type: ProductType | None = Field(default=None, description="Product type")    
-    protein: float | None = Field(default=None, ge=0)
-    fat: float | None = Field(default=None, ge=0)
-    carbs: float | None = Field(default=None, ge=0)
+    name: str = Field(default=None, min_length=1, description="Product name")
+    type: ProductType = Field(default=None, description="Product type")
+    protein: float = Field(default=None, ge=0)
+    fat: float = Field(default=None, ge=0)
+    carbs: float = Field(default=None, ge=0)
 
 
 # # # # # # # # # # # # # # # # # # # # # # # # COMPONENTS # # # # # # # # # # # # # # # # # # # # # # # #
@@ -124,11 +124,13 @@ class PeriodReport(BaseModel):
     date_from: Date
     date_to: Date
 
-    bmr: int = Field(..., ge=0, description="User BMR")  
-    tdee: int = Field(..., ge=0, description="User TDEE") 
+    bmr: int = Field(..., ge=0, description="User BMR")
+    tdee: int = Field(..., ge=0, description="User TDEE")
 
     target_calories: int = Field(..., ge=0, description="User target calories")
-    remaining_calories: int = Field(..., ge=0, description="Remaining calories for user")
+    remaining_calories: int = Field(
+        ..., ge=0, description="Remaining calories for user"
+    )
     exceeded_calories: int = Field(..., ge=0, description="Exceeded by user calories")
 
     protein_min: int = Field(..., ge=0, description="Minimum user proteins")
@@ -144,7 +146,9 @@ class PeriodReport(BaseModel):
     log_count: int = Field(..., ge=0, description="Number of counted logs")
     days_with_logs: int = Field(..., ge=0, description="Days with logs")
     days_without_logs: int = Field(..., ge=0, description="Days without logs")
-    avg_calories_per_logged_day: int = Field(..., ge=0, description="Average calories logged per day")
+    avg_calories_per_logged_day: int = Field(
+        ..., ge=0, description="Average calories logged per day"
+    )
 
 
 class Top3Report(BaseModel):

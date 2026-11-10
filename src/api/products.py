@@ -109,13 +109,18 @@ def update_product_endpoint(
         updated_product = update_product(
             session, product_id, product_update, current_user.id
         )
-        if not updated_product:
+        if updated_product is None:
             raise HTTPException(status_code=404, detail="Product not found")
+        if updated_product is False:
+            raise HTTPException(
+                status_code=409, detail="Active product with this name already exists"
+            )
         session.commit()
         return updated_product
     except Exception:
         session.rollback()
         raise
+
 
 @router.delete("/products/{product_id}", tags=["Products"])
 def delete_products_endpoint(
@@ -134,6 +139,7 @@ def delete_products_endpoint(
         session.rollback()
         raise
 
+
 @router.patch("/products/{product_id}/visibility", tags=["Products"])
 def change_product_visibility_endpoint(
     product_id: int,
@@ -149,8 +155,13 @@ def change_product_visibility_endpoint(
             owner_id=current_user.id,
         )
 
-        if not updated_product:
+        if updated_product is False:
             raise HTTPException(status_code=404, detail="Product not found")
+        if updated_product is None:
+            raise HTTPException(
+                status_code=409, detail="Product contains private components"
+            )
+
         session.commit()
         return updated_product
     except Exception:
@@ -187,7 +198,9 @@ def create_composed_product_endpoint(
         )
         if not created_product:
             session.rollback()
-            raise HTTPException(status_code=409, detail="Active product with this name already exists")
+            raise HTTPException(
+                status_code=409, detail="Active product with this name already exists"
+            )
 
         for component in product.components:
             create_component(
@@ -260,6 +273,7 @@ def create_recipe_endpoint(
         session.rollback()
         raise
 
+
 @router.get("/recipes", response_model=ProductRecipeResponse, tags=["Recipes"])
 def get_recipe_endpoint(
     product_id: int,
@@ -283,7 +297,7 @@ def update_recipe_endpoint(
 ):
     try:
         updated_recipe = update_recipe(
-            session, current_user.id,recipe_update, product_id
+            session, current_user.id, recipe_update, product_id
         )
         if updated_recipe is None:
             raise HTTPException(status_code=404, detail="Product not found")
@@ -294,6 +308,7 @@ def update_recipe_endpoint(
     except Exception:
         session.rollback()
         raise
+
 
 @router.delete("/recipes", tags=["Recipes"])
 def delete_recipe_endpoint(

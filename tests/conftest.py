@@ -3,8 +3,8 @@ import os
 import pytest
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
 from sqlalchemy.engine import make_url
+from sqlalchemy.orm import Session
 
 from src.api.app import app
 from src.database.session import get_db

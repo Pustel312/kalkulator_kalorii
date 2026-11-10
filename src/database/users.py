@@ -44,7 +44,7 @@ def create_userprofile(
     birth_date: Date,
     activity_level: UserProfileActivityLevel,
     goal: UserProfileWeightGoalRate,
-    user_id: int
+    user_id: int,
 ):
     userprofile = UserProfile(
         user_id=user_id,

@@ -1,6 +1,7 @@
 from datetime import date as Date
 
 from sqlalchemy.orm import Session
+
 from src.enums import ProductType
 from src.models import Log
 from tests.common import client
@@ -10,7 +11,8 @@ from tests.conftest import test_engine
 
 
 def create_test_product(
-    name, protein, fat, carbs, weight, headers, product_type=ProductType.product):
+    name, protein, fat, carbs, weight, headers, product_type=ProductType.product
+):
     response = client.post(
         "/products",
         headers=headers,
@@ -25,18 +27,16 @@ def create_test_product(
     )
     return response
 
-def create_test_component(
-        name, headers, components, type=ProductType.product):
+
+def create_test_component(name, headers, components, type=ProductType.product):
     response = client.post(
         "/components/composed",
         headers=headers,
-        json={
-            "name": name,
-            "type": type,
-            "components": components
-        }
+        json={"name": name, "type": type, "components": components},
     )
     return response
+
+
 def create_test_recipe(product_id, recipe, servings, preparation_time, headers):
     response = client.post(
         "/recipes",

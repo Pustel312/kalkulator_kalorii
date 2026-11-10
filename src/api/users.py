@@ -116,6 +116,7 @@ def create_userprofile_endpoint(
         session.rollback()
         raise
 
+
 @router.get("/users/me/profile", response_model=UserProfileResponse)
 def get_userprofile(
     session: Session = Depends(get_db), current_user: User = Depends(get_current_user)
@@ -134,7 +135,9 @@ def update_userprofile_endpoint(
 ):
     try:
         updated_userprofile = update_userprofile(
-            session=session, user_id=current_user.id, userprofile_update=userprofile_update
+            session=session,
+            user_id=current_user.id,
+            userprofile_update=userprofile_update,
         )
         if not updated_userprofile:
             raise HTTPException(status_code=404, detail="UserProfile not found")

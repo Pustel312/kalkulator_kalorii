@@ -64,7 +64,7 @@ def report_average_weight_of_log(session: Session, user_id: int):
         )
         .join(Product, Log.product_id == Product.id)
         .where(Log.user_id == user_id)
-        .group_by(Product.name)
+        .group_by(Product.id, Product.name)
         .having(func.count(Log.id) >= 2)
         .order_by(func.avg(Log.weight).desc())
     )

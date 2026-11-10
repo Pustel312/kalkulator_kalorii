@@ -110,6 +110,7 @@ class ProductRecipe(Base):
         CheckConstraint("preparation_time >= 0", name="PRpreparation_time_nonnegative"),
     )
 
+
 class Log(Base):
     __tablename__ = "logs"
 
@@ -162,7 +163,9 @@ class UserProfile(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
-    sex: Mapped[UserProfileSex] = mapped_column(SqlEnum(UserProfileSex, name="sex"), nullable=False)
+    sex: Mapped[UserProfileSex] = mapped_column(
+        SqlEnum(UserProfileSex, name="sex"), nullable=False
+    )
     height: Mapped[int] = mapped_column(nullable=False)
     weight: Mapped[Decimal] = mapped_column(Numeric(4, 1), nullable=False)
     birth_date: Mapped[Date]

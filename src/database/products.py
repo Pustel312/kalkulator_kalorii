@@ -101,8 +101,19 @@ def update_product(
 ):
     product = load_private_products_by_id(session, product_id, owner_id)
     if not product:
-        return False
+        return None
     update_data = product_update.model_dump(exclude_unset=True)
+    if "name" in update_data:
+        stmt = select(Product).where(
+            Product.name == update_data["name"],
+            Product.owner_id == owner_id,
+            Product.active.is_(True),
+            Product.id != product_id,
+        )
+        result = session.execute(stmt)
+        product_check = result.scalar_one_or_none()
+        if product_check is not None:
+            return False
     for field, value in update_data.items():
         setattr(product, field, value)
     if any(field in update_data for field in ["protein", "fat", "carbs"]):
@@ -132,7 +143,7 @@ def change_product_visibility(
     if is_global:
         for component in product.components:
             if not component.component_product.is_global:
-                return False
+                return None
     product.is_global = is_global
     session.flush()
 
