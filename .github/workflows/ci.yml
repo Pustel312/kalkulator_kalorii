@@ -8,7 +8,7 @@ on:
   pull_request:
     branches:
       - main
-      
+
   workflow_dispatch:
 
 permissions:
@@ -35,7 +35,11 @@ jobs:
     
       - name: Run tests
         env:
+          DATABASE_URL: postgresql+psycopg://postgresuser1:postgrespassword1@localhost:5432/calorie_app_test
           TEST_DATABASE_URL: postgresql+psycopg://postgresuser1:postgrespassword1@localhost:5432/calorie_app_test
+          SECRET_KEY: ci-test-only-secret-key
+          ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+          REFRESH_TOKEN_EXPIRE_DAYS: "7"
         run: python -m pytest --cov=src --cov-branch --cov-report=term-missing --cov-report=html
 
       - name: Upload coverage report
