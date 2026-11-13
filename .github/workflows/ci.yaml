@@ -98,3 +98,30 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 5
+
+  Docker-build:
+    runs-on: ubuntu-latest
+    needs:
+      - Backend-tests
+      - Alembic-tests
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build Docker image
+        run: docker build -t ghcr.io/pustel312/calorie-app:${{ github.sha }} .
+
+      - name: Log in to ghcr
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image
+        if: github.event_name == 'push'
+        run: docker push ghcr.io/pustel312/calorie-app:${{ github.sha }}
