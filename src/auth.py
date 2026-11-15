@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -7,11 +7,21 @@ from src.database.users import load_user_by_id
 from src.security import decode_token
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/token/access")
-
+optional_bearer = OAuth2PasswordBearer(
+    tokenUrl="/users/token/access",
+    auto_error=False,
+)
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme), session: Session = Depends(get_db)
+    request: Request,
+    token: str | None = Depends(optional_bearer),
+    session: Session = Depends(get_db),
 ):
+    if token is None:
+        token = request.cookies.get("access_token")
+
+    if token is None:
+        raise HTTPException(status_code=401, detail="Missing access token")
 
     payload = decode_token(token)
     if payload is None:

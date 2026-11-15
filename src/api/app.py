@@ -4,6 +4,7 @@ from src.api.logs import router as logs_router
 from src.api.products import router as products_router
 from src.api.reports import router as reports_router
 from src.api.users import router as users_router
+from src.api.pages import router as pages_router
 
 app = FastAPI(
     title="Kalkulator kalorii API",
@@ -14,6 +15,7 @@ app.include_router(products_router)
 app.include_router(logs_router)
 app.include_router(reports_router)
 app.include_router(users_router)
+app.include_router(pages_router)
 
 
 @app.get("/healthcheck", tags=["Check"])
