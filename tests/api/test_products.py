@@ -262,10 +262,13 @@ def test_create_component_atomicity_check(clean_db):
     product_id1 = create_response_product1.json()["id"]
     product_id2 = create_response_product2.json()["id"]
 
-    with patch(
-        "src.api.products.create_component",
-        side_effect=[None, ValueError("Simulated error")],
-    ), pytest.raises(ValueError, match="Simulated error"):
+    with (
+        patch(
+            "src.api.products.create_component",
+            side_effect=[None, ValueError("Simulated error")],
+        ),
+        pytest.raises(ValueError, match="Simulated error"),
+    ):
         create_test_component(
             "Burrito",
             headers,
