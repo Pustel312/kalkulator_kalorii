@@ -12,6 +12,7 @@ optional_bearer = OAuth2PasswordBearer(
     auto_error=False,
 )
 
+
 def get_current_user(
     request: Request,
     token: str | None = Depends(optional_bearer),

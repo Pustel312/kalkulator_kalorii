@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 
 from src.api.logs import router as logs_router
+from src.api.pages import router as pages_router
 from src.api.products import router as products_router
 from src.api.reports import router as reports_router
 from src.api.users import router as users_router
-from src.api.pages import router as pages_router
 
 app = FastAPI(
     title="Kalkulator kalorii API",
