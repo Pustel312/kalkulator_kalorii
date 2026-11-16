@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content%}
+    <a href="/">Powrot</a>
+    <h1>Produkty</h1>
+    <form method="get">
+        <label for="phrase">Fraza</label>
+        <input id="phrase" name="phrase">
+        <button type="submit">Szukaj</button>
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>Produkt</th>
+                <th>Białko</th>
+                <th>Tłuszcze</th>
+                <th>Węglowodany</th>
+                <th>Kalorie</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.protein}}</td> 
+                    <td>{{ product.fat}}</td> 
+                    <td>{{ product.carbs}}</td> 
+                    <td>{{ product.calories }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5">Brak produktów</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from src.api.users import user_create_endpoint, user_login_endpoint
+from src.api.products import get_products, search_products_endpoint
 from src.auth import get_current_user
 from src.database.session import get_db
 from src.models import User
@@ -13,7 +14,7 @@ from src.schemas import UserCreate, UserLogin
 
 router = APIRouter()
 
-templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
+templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 
 
 @router.get("/")
@@ -80,9 +81,25 @@ def login_submit(
     response.set_cookie(key="access_token", value=tokens["access_token"], httponly=True)
     return response
 
-
 @router.post("/logout")
 def logout_submit():
     response = RedirectResponse(url="/login", status_code=303)
     response.delete_cookie(key="access_token")
     return response
+
+@router.get("/products_page")
+def products_page(
+    request: Request,
+    phrase: str = "",
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_db)
+):
+    if phrase:
+        products = search_products_endpoint(phrase=phrase, session=session, current_user=current_user)
+    else:
+        products = get_products(session=session, current_user=current_user)
+    return templates.TemplateResponse(
+        request=request,
+        name="products_page.html",
+        context={"products": products},
+    )
