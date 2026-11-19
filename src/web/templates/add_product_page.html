@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content%}
+<h1>Dodaj nowy produkt</h1>
+<form method="post">
+    <label for="name">Nazwa</label>
+    <input id="name" name="name" type="text" required value="{{ product.name if product is defined else '' }}">
+    
+    <label for="type">Typ</label>
+    <select name="type" id="type" required>
+        <option value="dish">Danie</option>
+        <option value="product">Produkt</option>
+        <option value="ingredient">Składnik</option>
+    </select>
+
+    <label for="protein">Białko</label>
+    <input id="protein" name="protein" type="number" min="0" step="0.1" required value="{{ product.protein if product is defined else '' }}">
+
+    <label for="fat">Tłuszcze</label>
+    <input id="fat" name="fat" type="number" min="0" step="0.1" required value="{{ product.fat if product is defined else '' }}">
+
+    <label for="carbs">Węglowodany</label>
+    <input id="carbs" name="carbs" type="number" min="0" step="0.1" required value="{{ product.carbs if product is defined else '' }}">
+
+    <label for="weight">Waga</label>
+    <input id="weight" name="weight" type="number" min="0.1" step="0.1" required value="{{ product.weight if product is defined else '' }}">
+
+    <button type="submit">Dodaj produkt</button>
+</form>
+{% if error %}
+    <p role="alert">{{ error }}</p>
+{% endif %}
+{% endblock %}

@@ -2,6 +2,7 @@
 
 {% block content%}
     <a href="/">Powrot</a>
+    <a href="/add_product_page">Dodaj nowy produkt</a>
     <h1>Produkty</h1>
     <form method="get">
         <label for="phrase">Fraza</label>
@@ -26,6 +27,7 @@
                     <td>{{ product.fat}}</td> 
                     <td>{{ product.carbs}}</td> 
                     <td>{{ product.calories }}</td>
+                    <td><a href="/edit_product_page/{{ product.id }}">Edytuj</a></td>
                 </tr>
             {% else %}
                 <tr><td colspan="5">Brak produktów</td></tr>
