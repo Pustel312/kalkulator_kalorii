@@ -28,6 +28,12 @@
                     <td>{{ product.carbs}}</td> 
                     <td>{{ product.calories }}</td>
                     <td><a href="/edit_product_page/{{ product.id }}">Edytuj</a></td>
+                    <td>
+                        <form method="POST" action="/edit_product_visibility/{{ product.id }}">
+                            <input type="hidden" name="is_global" value="{{ 'false' if product.is_global else 'true' }}">
+                            <button type="submit">{{ "Globalny" if product.is_global else "Prywatny" }}</button>
+                        </form>
+                    </td>
                 </tr>
             {% else %}
                 <tr><td colspan="5">Brak produktów</td></tr>

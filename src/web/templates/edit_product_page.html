@@ -23,6 +23,11 @@
         <input id="carbs" name="carbs" type="number" min="0" step="0.1" required value="{{ product.carbs }}">    
         <button type="submit">Zmień produkt</button>
     </form>
+    {% if product.owner_id == current_user.id and not product.is_global %}        
+        <form method="post" action="/edit_product_page/delete/{{ product.id }}  ">
+            <button type="submit">Usuń produkt</button>
+        </form>
+    {% endif %}
 
 {% endif %}
 {% endblock %}

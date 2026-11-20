@@ -10,6 +10,8 @@ from src.api.products import (
     get_products,
     search_products_endpoint,
     update_product_endpoint,
+    change_product_visibility_endpoint,
+    delete_products_endpoint
 )
 from src.api.users import user_create_endpoint, user_login_endpoint
 from src.auth import get_current_user
@@ -26,7 +28,6 @@ templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
 @router.get("/")
 def home_page(
     request: Request,
-    current_user: User = Depends(get_current_user),
 ):
     return templates.TemplateResponse(request=request, name="home.html")
 
@@ -167,7 +168,10 @@ def edit_product_page(
     return templates.TemplateResponse(
         request=request,
         name="edit_product_page.html",
-        context={"product": product},
+        context={
+            "product": product,
+            "current_user": current_user
+            },
     )
 
 
@@ -194,6 +198,7 @@ def edit_product_on_page(
                 context={
                     "error": "Produkt o tej nazwie już istnieje!",
                     "product": product_update,
+                    "current_user": current_user
                 },
                 status_code=409,
             )
@@ -208,4 +213,28 @@ def edit_product_on_page(
             )
         else:
             raise
+    return RedirectResponse(url="/products_page", status_code=303)
+
+@router.post("/edit_product_visibility/{product_id}")
+def change_product_visibility_on_page(
+    product_id: int,
+    is_global: bool = Form(),
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    change_product_visibility_endpoint(
+        product_id=product_id,
+        is_global=is_global,
+        session=session,
+        current_user=current_user
+        )
+    return RedirectResponse(url="/products_page", status_code=303)
+
+@router.post("/edit_product_page/delete/{product_id}")
+def delete_product_on_page(
+    product_id: int,
+    session: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    delete_products_endpoint(product_id=product_id, session=session, current_user=current_user)
     return RedirectResponse(url="/products_page", status_code=303)
