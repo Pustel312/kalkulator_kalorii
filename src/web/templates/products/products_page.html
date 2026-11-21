@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content%}
+    <a href="/">Powrot</a>
+    <a href="/add_product_page">Dodaj nowy produkt</a>
+    <h1>Produkty</h1>
+    <form method="get">
+        <label for="phrase">Fraza</label>
+        <input id="phrase" name="phrase">
+        <button type="submit">Szukaj</button>
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>Produkt</th>
+                <th>Białko</th>
+                <th>Tłuszcze</th>
+                <th>Węglowodany</th>
+                <th>Kalorie</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.protein}}</td> 
+                    <td>{{ product.fat}}</td> 
+                    <td>{{ product.carbs}}</td> 
+                    <td>{{ product.calories }}</td>
+                    <td><a href="/edit_product_page/{{ product.id }}">Edytuj</a></td>
+                    <td>
+                        <form method="POST" action="/edit_product_visibility/{{ product.id }}">
+                            <input type="hidden" name="is_global" value="{{ 'false' if product.is_global else 'true' }}">
+                            <button type="submit">{{ "Globalny" if product.is_global else "Prywatny" }}</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5">Brak produktów</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

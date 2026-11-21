@@ -6,9 +6,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from src.api.users import user_create_endpoint, user_login_endpoint
-from src.auth import get_current_user
 from src.database.session import get_db
-from src.models import User
 from src.schemas import UserCreate, UserLogin
 
 router = APIRouter()
@@ -16,17 +14,21 @@ router = APIRouter()
 templates = Jinja2Templates(directory=Path(__file__).parent.parent / "templates")
 
 
-@router.get("/")
-def home_page(
-    request: Request,
-    current_user: User = Depends(get_current_user),
-):
-    return templates.TemplateResponse(request=request, name="home.html")
-
-
 @router.get("/register")
 def register_page(request: Request):
-    return templates.TemplateResponse(request=request, name="register.html")
+    return templates.TemplateResponse(request=request, name="users/register.html")
+
+
+@router.get("/login")
+def login_page(request: Request):
+    return templates.TemplateResponse(request=request, name="users/login.html")
+
+
+@router.post("/logout")
+def logout_submit():
+    response = RedirectResponse(url="/login", status_code=303)
+    response.delete_cookie(key="access_token")
+    return response
 
 
 @router.post("/register")
@@ -44,16 +46,11 @@ def register_submit(
             raise
         return templates.TemplateResponse(
             request=request,
-            name="register.html",
+            name="users/register.html",
             context={"error": "Konto z tym adresem e-mail juz istnieje."},
             status_code=409,
         )
     return RedirectResponse(url="/login", status_code=303)
-
-
-@router.get("/login")
-def login_page(request: Request):
-    return templates.TemplateResponse(request=request, name="login.html")
 
 
 @router.post("/login")
@@ -71,18 +68,11 @@ def login_submit(
             raise
         return templates.TemplateResponse(
             request=request,
-            name="login.html",
+            name="users/login.html",
             context={"error": "Nieprawidłowy e-mail lub hasło."},
             status_code=401,
         )
 
     response = RedirectResponse(url="/", status_code=303)
     response.set_cookie(key="access_token", value=tokens["access_token"], httponly=True)
-    return response
-
-
-@router.post("/logout")
-def logout_submit():
-    response = RedirectResponse(url="/login", status_code=303)
-    response.delete_cookie(key="access_token")
     return response

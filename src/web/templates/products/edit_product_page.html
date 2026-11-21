@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if error %}
+    <p role="alert">{{ error }}</p>
+{% endif %}
+{% if product is defined %}
+    <h1>Edytuj produkt</h1>
+    <form method="post">
+        <label for="name">Nazwa produktu</label>
+        <input id="name" name="name" type="text" required value="{{ product.name }}">
+        <label for="type">Typ</label>
+        <select name="type" id="type" required>
+            <option value="dish" {% if product.type.value == "dish" %}selected{% endif %}> Danie</option>
+            <option value="product" {% if product.type.value == "product" %}selected{% endif %}>Produkt</option>
+            <option value="ingredient" {% if product.type.value == "ingredient" %}selected{% endif %}>Składnik</option>
+        </select>
+        <label for="protein">Białko</label>
+        <input id="protein" name="protein" type="number" min="0" step="0.1" required value="{{ product.protein }}">
+        <label for="fat">Tłuszcze</label>
+        <input id="fat" name="fat" type="number" min="0" step="0.1" required value="{{ product.fat }}">
+        <label for="carbs">Węglowodany</label>
+        <input id="carbs" name="carbs" type="number" min="0" step="0.1" required value="{{ product.carbs }}">    
+        <button type="submit">Zmień produkt</button>
+    </form>
+    {% if product.owner_id == current_user.id and not product.is_global %}        
+        <form method="post" action="/edit_product_page/delete/{{ product.id }}  ">
+            <button type="submit">Usuń produkt</button>
+        </form>
+    {% endif %}
+
+{% endif %}
+{% endblock %}

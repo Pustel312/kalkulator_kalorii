@@ -141,6 +141,16 @@ def change_product_visibility(
     if not product:
         return False
     if is_global:
+        stmt = select(Product).where(
+            Product.active.is_(True),
+            Product.name == product.name,
+            Product.is_global.is_(True),
+            Product.id != product.id,
+        )
+        result = session.execute(stmt)
+        product_check = result.scalar_one_or_none()
+        if product_check:
+            return "global_name_conflict"
         for component in product.components:
             if not component.component_product.is_global:
                 return None

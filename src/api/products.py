@@ -161,6 +161,10 @@ def change_product_visibility_endpoint(
             raise HTTPException(
                 status_code=409, detail="Product contains private components"
             )
+        if updated_product == "global_name_conflict":
+            raise HTTPException(
+                status_code=409, detail="Global product with this name already exists"
+            )
 
         session.commit()
         return updated_product
